@@ -4,8 +4,8 @@
 // dotenv.config();
 
 // Define base URL using the environment variable or fallback
-export const BASE_URL = "http://localhost:5000/api/v1";
-// export const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000/api/v1";
+// export const BASE_URL = "http://localhost:8000/api/v1";
+export const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000/api/v1";
 
 // Define other API endpoints
 export const AUTH_URL = "/auth";
