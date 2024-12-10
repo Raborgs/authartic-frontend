@@ -10,6 +10,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { useLoginMutation } from "@/slices/userApiSlice";
 import { setCredentials } from "@/slices/authSlice";
 import { toast } from "react-toastify";
+import Stack from "@mui/material/Stack";
+import CircularProgress from "@mui/material/CircularProgress";
 import { useRouter } from "next/router";
 
 const LoginForm = ({ title, from }) => {
@@ -19,7 +21,7 @@ const LoginForm = ({ title, from }) => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const [login] = useLoginMutation();
+  const [login, { isLoading: isLoginLoading }] = useLoginMutation();
   const { userInfo } = useSelector((state) => state.auth);
 
   React.useEffect(() => {
@@ -182,10 +184,17 @@ const LoginForm = ({ title, from }) => {
       <div className="flex items-center justify-between md:justify-center px-3 md:p-0">
         <div className="flex items-center justify-start overflow-hidden bg-[#22477F] p-[1px]  rounded-[7px]">
           <Button
+            disabled={isLoginLoading}
             className="cursor-pointer font-kodchasan text-md md:text-lg xl:text-xl text-white hover:bg-[#22477F] font-normal py-1 px-5 md:px-9 bg-[#22477F]"
             onClick={() => submitHandler(from === "ADMIN" ? "ADMIN" : "VENDOR")}
           >
-            Login
+            <Stack spacing={2} direction="row" alignItems="center">
+              {isLoginLoading ? (
+                <CircularProgress size="30px" />
+              ) : (
+                <span>Login</span>
+              )}
+            </Stack>
           </Button>
         </div>
         <div className="block md:hidden">

@@ -2,7 +2,14 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
-import { Typography, Button, TextField, Box, Checkbox, CircularProgress } from "@mui/material";
+import {
+  Typography,
+  Button,
+  TextField,
+  Box,
+  Checkbox,
+  CircularProgress,
+} from "@mui/material";
 import {
   useGetCertificateinfoByIdQuery,
   useReIssueCertificatesMutation,
@@ -10,31 +17,32 @@ import {
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import image from "../assets/images/image.png";
-import WithAuth from '@/components/withAuth';
+import WithAuth from "@/components/withAuth";
 import { useReportProblemMutation } from "@/slices/reportProblemApiSlice";
 import { useReIssueExistingMutation } from "@/slices/reIssueExistingApiSlice";
 
 function IssueMore() {
   const router = useRouter();
-  const [issueState, setIssueState] = useState('');
+  const [issueState, setIssueState] = useState("");
   const [reIssueCertificateNo, setReIssueCertificateNo] = useState(0);
   const [reIssueExistingId, setReIssueExistingId] = useState(0);
   const [acknowledge, setAcknowledge] = useState(false);
   const [reportText, setReportText] = useState(""); // State for report problem
 
-  const { id: certificateInfoId, saved_draft: certificateSavedDraft, btn: clickedinfo } = router.query;
+  const {
+    id: certificateInfoId,
+    saved_draft: certificateSavedDraft,
+    btn: clickedinfo,
+  } = router.query;
 
-  const [reIssueExisting, { isLoading: isReIssueExistingLoading }] = useReIssueExistingMutation();
+  const [reIssueExisting, { isLoading: isReIssueExistingLoading }] =
+    useReIssueExistingMutation();
 
-  const [
-    reIssueCertificate,
-    { isLoading: isLoadingReIssueCertificates },
-  ] = useReIssueCertificatesMutation();
+  const [reIssueCertificate, { isLoading: isLoadingReIssueCertificates }] =
+    useReIssueCertificatesMutation();
 
-  const [
-    reportProblem,
-    { isLoading: isLoadingreportProblem },
-  ] = useReportProblemMutation();
+  const [reportProblem, { isLoading: isLoadingreportProblem }] =
+    useReportProblemMutation();
 
   const {
     data: certificateInfo,
@@ -51,26 +59,18 @@ function IssueMore() {
       const res = await reIssueCertificate({
         certificateInfoId,
         bodyData: { number_of_certificate: parseInt(reIssueCertificateNo) },
-      });
+      }).unwrap();
 
-      if (res?.error) {
-        if (res.error.status === 404) {
-          toast.error(res?.error?.data?.message);
-        } else {
-          toast.error("An error occurred: " + (res.error.message || "Unknown error"));
-        }
+      if (res?.data) {
+        toast.error(res?.data?.message);
       } else {
-        toast.success(res?.data?.message);
+        toast.success(res?.message);
         refetch();
         setReIssueCertificateNo(0);
       }
     } catch (err) {
-      if (err?.response?.data) {
-        toast.error(err.response.data.message || "An unknown error occurred");
-      } else if (err?.message) {
-        toast.error(err.message);
-      } else {
-        toast.error("An unexpected error occurred");
+      if (err?.data) {
+        toast.error(err?.data?.message || "An unknown error occurred");
       }
     }
   };
@@ -81,22 +81,24 @@ function IssueMore() {
         throw new Error("Certificate ID is not defined");
       }
 
-      const res = await reportProblem({ id: certificateInfoId, reporting_text: reportText });
+      const res = await reportProblem({
+        id: certificateInfoId,
+        reporting_text: reportText,
+      }).unwrap();
 
-      if (res?.error) {
-        toast.error("An error occurred: " + (res.error.message || "Unknown error"));
+      if (res?.data) {
+        toast.error(
+          res?.data?.message ||
+            "Error while submitting your report please contact customer suppor"
+        );
       } else {
         toast.success("Your problem report has been submitted.");
         setReportText(""); // Clear the text field
         setIssueState("issueMore"); // Optionally, revert to the initial state
       }
     } catch (err) {
-      if (err?.response?.data) {
-        toast.error(err.response.data.message || "An unknown error occurred");
-      } else if (err?.message) {
-        toast.error(err.message);
-      } else {
-        toast.error("An unexpected error occurred");
+      if (err?.data) {
+        toast.error(err?.data?.message || "An unknown error occurred");
       }
     }
   };
@@ -105,38 +107,48 @@ function IssueMore() {
     const data2Send = {
       id: certificateInfoId,
       body: {
-        certificate_id: reIssueExistingId
-      }
-    }
+        certificate_id: reIssueExistingId,
+      },
+    };
     try {
-      const response = await reIssueExisting(data2Send).unwrap()
+      const response = await reIssueExisting(data2Send).unwrap();
       if (response) {
-        toast.success(response?.message || 'Certificate reissued successfully.');
+        toast.success(
+          response?.message || "Certificate reissued successfully."
+        );
       }
     } catch (error) {
-      toast.error(error?.data?.message || error?.error || error?.status || error?.data?.error || error?.data?.statusCode)
+      toast.error(
+        error?.data?.message ||
+          error?.error ||
+          error?.status ||
+          error?.data?.error ||
+          error?.data?.statusCode
+      );
     }
-  }
+  };
 
   const handleReIssueExistingCancel = () => {
     setReIssueExistingId(0);
-    router.push("/home-after-login")
-  }
+    router.push("/home-after-login");
+  };
 
   const handleCancel = () => {
     setReIssueCertificateNo(0);
     setAcknowledge(false);
     setReportText(""); // Clear the report text field
-    router.push("/home-after-login")
+    router.push("/home-after-login");
   };
 
   useEffect(() => {
     if (clickedinfo) {
-      setIssueState(clickedinfo)
+      setIssueState(clickedinfo);
     }
-  }, [clickedinfo])
+  }, [clickedinfo]);
 
-  const lastIssuedDate = new Date(certificateInfo?.issued_date).toLocaleString();
+  const lastIssuedDate = new Date(
+    certificateInfo?.issued_date
+  ).toLocaleString();
 
   return (
     <>
@@ -160,7 +172,10 @@ function IssueMore() {
               {lastIssuedDate || "example Date"}
             </Typography>
             <Typography className="font-koho text-[#080808] font-light text-[20px]">
-              <span className="text-slate-500">number of certificates issued</span> {certificateInfo?.issued || 0}
+              <span className="text-slate-500">
+                number of certificates issued
+              </span>{" "}
+              {certificateInfo?.issued || 0}
             </Typography>
           </Box>
 
@@ -168,8 +183,9 @@ function IssueMore() {
             <Button
               type="submit"
               variant="contained"
-              className={`rounded-[7px] font-kodchasan float-end py-0 ${issueState === "issueMore" ? "bg-[#C2C3CE]" : "bg-[#22477F]"
-                }`}
+              className={`rounded-[7px] font-kodchasan float-end py-0 ${
+                issueState === "issueMore" ? "bg-[#C2C3CE]" : "bg-[#22477F]"
+              }`}
               onClick={() => setIssueState("issueMore")}
             >
               Issue More
@@ -177,8 +193,11 @@ function IssueMore() {
             <Button
               type="submit"
               variant="contained"
-              className={`rounded-[7px] font-kodchasan float-end py-0 ${issueState === "reissueExisting" ? "bg-[#C2C3CE]" : "bg-[#22477F]"
-                }`}
+              className={`rounded-[7px] font-kodchasan float-end py-0 ${
+                issueState === "reissueExisting"
+                  ? "bg-[#C2C3CE]"
+                  : "bg-[#22477F]"
+              }`}
               onClick={() => setIssueState("reissueExisting")}
             >
               Reissue existing
@@ -186,8 +205,9 @@ function IssueMore() {
             <Button
               type="button"
               variant="contained"
-              className={`rounded-[7px] font-kodchasan py-0 ${issueState === "reportIssue" ? "bg-[#C2C3CE]" : "bg-[#22477F]"
-                }`}
+              className={`rounded-[7px] font-kodchasan py-0 ${
+                issueState === "reportIssue" ? "bg-[#C2C3CE]" : "bg-[#22477F]"
+              }`}
               onClick={() => setIssueState("reportIssue")}
             >
               Report Problem
@@ -211,7 +231,9 @@ function IssueMore() {
                 />
               </Box>
               <Typography color={"white"}>
-                The issues you are ordering right now will have all the same exact information as the previously ordered certificates for “Certificate Name”
+                The issues you are ordering right now will have all the same
+                exact information as the previously ordered certificates for
+                “Certificate Name”
               </Typography>
 
               <Box className="flex items-center">
@@ -235,11 +257,16 @@ function IssueMore() {
                 className="bg-[#27A213] rounded-[7px] font-kodchasan w-[189px]"
                 sx={{ fontFamily: "Kodchasan, sans-serif" }}
                 onClick={reIssueHandler}
-                disabled={!acknowledge}
+                disabled={!acknowledge || isLoadingReIssueCertificates}
               >
-                {isLoadingReIssueCertificates ? <CircularProgress size={24} /> : "Place Order"}
+                {isLoadingReIssueCertificates ? (
+                  <CircularProgress size={24} />
+                ) : (
+                  "Place Order"
+                )}
               </Button>
               <Button
+                disabled={isLoadingReIssueCertificates}
                 onClick={handleCancel}
                 variant="contained"
                 className="bg-[#A21313] rounded-[7px] font-kodchasan mt-5 w-[189px]"
@@ -264,7 +291,7 @@ function IssueMore() {
                   placeholder="Enter certificate number here"
                   className="my-6"
                   value={reIssueExistingId}
-                  onChange={e => setReIssueExistingId(e.target.value)}
+                  onChange={(e) => setReIssueExistingId(e.target.value)}
                   sx={{
                     backgroundColor: "#fff",
                     maxWidth: "508px",
@@ -314,9 +341,14 @@ function IssueMore() {
                 className="bg-[#27A213] rounded-[7px] font-kodchasan w-[189px]"
                 sx={{ fontFamily: "Kodchasan, sans-serif" }}
               >
-                {isReIssueExistingLoading ? <CircularProgress size={24} /> : "Place Order"}
+                {isReIssueExistingLoading ? (
+                  <CircularProgress size={24} />
+                ) : (
+                  "Place Order"
+                )}
               </Button>
               <Button
+                disabled={isReIssueExistingLoading}
                 onClick={handleReIssueExistingCancel}
                 variant="contained"
                 className="bg-[#A21313] rounded-[7px] font-kodchasan mt-5 w-[189px]"
@@ -361,9 +393,14 @@ function IssueMore() {
                 onClick={reportProblemHandler}
                 disabled={isLoadingreportProblem}
               >
-                {isLoadingreportProblem ? <CircularProgress size={24} /> : "Submit"}
+                {isLoadingreportProblem ? (
+                  <CircularProgress size={24} />
+                ) : (
+                  "Submit"
+                )}
               </Button>
               <Button
+                disabled={isLoadingreportProblem}
                 onClick={handleCancel}
                 variant="contained"
                 className="bg-[#A21313] rounded-[7px] font-kodchasan mt-5 w-[189px]"

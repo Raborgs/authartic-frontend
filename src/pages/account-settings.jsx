@@ -15,6 +15,7 @@ import sample from "@/assets/images/sample.svg";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import WithAuth from "@/components/withAuth";
+import { CircularProgress, Stack } from "@mui/material";
 
 const AccountSettings = () => {
   // Define initialFormData as a constant to avoid recreating it on each render
@@ -42,7 +43,8 @@ const AccountSettings = () => {
     useGetProfileQuery();
   const [updateUser, { isLoading: isUpdateLoading }] =
     useUpdateProfileMutation();
-  const [uploadAttachment] = useUploadAttachmentMutation();
+  const [uploadAttachment, { isLoading: isAttachmentLoading }] =
+    useUploadAttachmentMutation();
   const uploadPicRef = useRef(null);
 
   const [formData, setFormData] = useState(initialFormData);
@@ -87,7 +89,7 @@ const AccountSettings = () => {
       const uploadedLogo = formData.changedImageFile
         ? await uploadAttachment(uploadLogoData).unwrap()
         : null;
-      const logoImageId = uploadedLogo?.id;
+      const logoImageId = uploadedLogo?.data?.id;
 
       // Filter out empty links
       const filteredOtherLinks = formData.other_links.filter(
@@ -111,10 +113,9 @@ const AccountSettings = () => {
 
       const res = await updateUser(dataToSubmit).unwrap();
       toast.success(res?.message || res?.data?.message || "User Updated.");
+      userProfileRefetch();
     } catch (error) {
-      toast.error(
-        error?.message || error?.data?.message[0] || "Error in Submit"
-      );
+      toast.error(error?.message || error?.data?.message || "Error in Submit");
     }
   };
 
@@ -126,10 +127,14 @@ const AccountSettings = () => {
         phone: userProfile.phone || "",
         about_brand: userProfile.about_brand || "",
         country: userProfile.country?.id || null,
-        other_links: userProfile.other_links || ["", "", ""],
+        other_links: userProfile.other_links
+          ?.concat(["", "", ""])
+          ?.slice(0, 3) || ["", "", ""],
         profileImage: userProfile.vendor_logo || sample,
         user_name: userProfile.vendor_name || "",
-        social_media: userProfile.social_media || ["", "", ""],
+        social_media: userProfile.social_media
+          ?.concat(["", "", ""])
+          ?.slice(0, 3) || ["", "", ""],
         website_url: userProfile.website_url || "",
       });
       setEditingField(null);
@@ -458,11 +463,16 @@ const AccountSettings = () => {
                   type="button"
                   className="bg-[#27A213] w-[89px] h-[24px] rounded-[7px] font-kodchasan text-[20px] font-bold"
                   onClick={handleSubmit}
-                  disabled={isUpdateLoading}
+                  disabled={isUpdateLoading || isAttachmentLoading}
                 >
-                  Save
+                  {isUpdateLoading || isAttachmentLoading ? (
+                    <CircularProgress size="24px" />
+                  ) : (
+                    "Save"
+                  )}
                 </button>
                 <button
+                  disabled={isUpdateLoading || isAttachmentLoading}
                   type="button"
                   className="bg-[#A21313] w-[89px] h-[26px] rounded-[7px] font-kodchasan text-[20px] font-bold"
                   onClick={handleCancel}

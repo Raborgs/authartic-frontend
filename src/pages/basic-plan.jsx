@@ -12,6 +12,7 @@ import {
   Avatar,
   Checkbox,
   MenuItem,
+  CircularProgress,
 } from "@mui/material";
 import Image from "next/image";
 import Icon from "../assets/images/elements.svg";
@@ -36,24 +37,24 @@ const initialData = {
 function Index() {
   const router = useRouter();
   const uploadProductImageRef = useRef(null);
-  const {
-    data: currentUser,
-    isLoading: isCurrentUserLoading,
-    error: isCurrentUserError,
-    refetch: currentUserRefetch,
-  } = useGetProfileQuery();
   const [productImagePreview, setProductImagePreview] = useState(null);
-
-  const [uploadProductImage] = useUploadAttachmentMutation();
-  const [createCertificate] = usePostCertificateInfoMutation();
-  const [formData, setFormData] = useState(initialData);
   const [acceptCertificate, setAcceptCertificate] = useState(false);
   const [imageFiles, setImageFiles] = useState(null);
-
   const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState(initialData);
 
-  const handleProductImageInputClick = () =>
+  const { data: currentUser, refetch: currentUserRefetch } =
+    useGetProfileQuery();
+
+  const [uploadProductImage, { isLoading: uploadImgLoading }] =
+    useUploadAttachmentMutation();
+
+  const [createCertificate, { isLoading: createCertificateLoading }] =
+    usePostCertificateInfoMutation();
+
+  const handleProductImageInputClick = () => {
     uploadProductImageRef.current.click();
+  };
 
   const handleProductImageChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -70,7 +71,11 @@ function Index() {
 
   const handleSubmit = async (toggleDraft) => {
     if (!formData.name || !formData.description || !formData.product_sell) {
-      toast.warning("Form fields must be filled correctly");
+      toast.error(
+        (!formData.name && "Item Name is Required") ||
+          (!formData.description && "Item description is Required") ||
+          (!formData.product_sell && "Product sell information is Required")
+      );
     } else if (!acceptCertificate) {
       toast.info("You must accept acknowledge to continue");
     } else {
@@ -134,6 +139,7 @@ function Index() {
     setAcceptCertificate(false);
     setProductImagePreview(null);
     toast.success("Certificate Cleared!");
+    router.push("/home-after-login");
   };
 
   // Warning Tip When Both Background Color and Font Color are same....
@@ -153,6 +159,10 @@ function Index() {
       setIsDataLoaded(true);
     }
   }, [currentUser]);
+
+  useEffect(() => {
+    currentUserRefetch();
+  }, [currentUserRefetch]);
 
   return (
     <>
@@ -451,22 +461,39 @@ function Index() {
             </Box>
             <Box display="flex" flexDirection="column" alignItems="end" gap={2}>
               <Button
-                disabled={!acceptCertificate}
+                disabled={
+                  !acceptCertificate ||
+                  uploadImgLoading ||
+                  createCertificateLoading
+                }
                 variant="contained"
                 onClick={() => handleSubmit(false)}
                 className="bg-[#27A213] rounded-[7px] font-kodchasan px-4"
               >
-                {loading ? "Loading..." : "Place Order"}
+                {uploadImgLoading || createCertificateLoading ? (
+                  <CircularProgress size="24px" />
+                ) : (
+                  "Place Order"
+                )}
               </Button>
               <Button
-                disabled={!acceptCertificate}
+                disabled={
+                  !acceptCertificate ||
+                  uploadImgLoading ||
+                  createCertificateLoading
+                }
                 onClick={() => handleSubmit(true)}
                 variant="contained"
                 className="bg-[#81ACF3] rounded-[7px] font-kodchasan px-4"
               >
-                Save Draft
+                {uploadImgLoading || createCertificateLoading ? (
+                  <CircularProgress size="24px" />
+                ) : (
+                  "Save Draft"
+                )}
               </Button>
               <Button
+                disabled={uploadImgLoading || createCertificateLoading}
                 onClick={handleCancelSubmit}
                 variant="contained"
                 className="bg-[#A21313] rounded-[7px] font-kodchasan px-4"

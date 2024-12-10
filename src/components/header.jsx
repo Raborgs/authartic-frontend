@@ -15,24 +15,24 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useGetProfileQuery } from "@/slices/userApiSlice";
+import { getUserRoleFromLocalStorage } from "@/utils/get-token";
 
 const Header = ({ disableAccountSettings }) => {
   const router = useRouter();
   const dispatch = useDispatch();
-  const {data:logedInUserDetails} = useGetProfileQuery()
+  const { data: logedInUserDetails } = useGetProfileQuery();
   const token = useSelector((state) => state.auth.userInfo?.access_token);
   const [logoutApiCall] = useLogoutMutation();
 
-  const [logedInUser,setLogedInUser]=useState({})
+  const [logedInUser, setLogedInUser] = useState({});
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [authStatus, setAuthStatus] = useState(false);
 
-  
-  useEffect(()=>{
-    if(logedInUserDetails){
-      setLogedInUser(logedInUserDetails)
-}
-  },[logedInUserDetails])
+  useEffect(() => {
+    if (logedInUserDetails) {
+      setLogedInUser(logedInUserDetails);
+    }
+  }, [logedInUserDetails]);
 
   useEffect(() => {
     if (token) {
@@ -58,9 +58,9 @@ const Header = ({ disableAccountSettings }) => {
           response?.data?.message ||
           "Successfully logged out!"
       );
-      if(logedInUser?.role === "ADMIN"){
+      if (logedInUser?.role === "ADMIN") {
         router.push("/admin-login");
-      }else{
+      } else {
         router.push("/");
       }
     } catch (error) {
@@ -79,6 +79,12 @@ const Header = ({ disableAccountSettings }) => {
   const handleClose = () => {
     setAnchorEl(null);
   };
+  const handleLogoClick = () => {
+    const userRole = getUserRoleFromLocalStorage();
+    if (userRole !== "ADMIN") {
+      router.push("/home-after-login");
+    }
+  };
 
   return (
     <Box
@@ -96,6 +102,7 @@ const Header = ({ disableAccountSettings }) => {
           width={200}
           className="w-[125px] sm:w-[160px] md:w-[200px] h-auto"
           priority
+          onClick={handleLogoClick}
         />
       </Box>
 
@@ -170,16 +177,18 @@ const Header = ({ disableAccountSettings }) => {
                     Logout
                   </Button>
                 </MenuItem>
-              ) : logedInUser?.role !=="ADMIN" && (
-                <MenuItem onClick={handleClose}>
-                  <Link
-                    href="/account-settings"
-                    className="font-Kodchasan text-sm font-medium cursor-pointer p-0 flex items-center gap-1"
-                  >
-                    <ManageAccountsIcon />
-                    <small>Account Settings</small>
-                  </Link>
-                </MenuItem>
+              ) : (
+                logedInUser?.role !== "ADMIN" && (
+                  <MenuItem onClick={handleClose}>
+                    <Link
+                      href="/account-settings"
+                      className="font-Kodchasan text-sm font-medium cursor-pointer p-0 flex items-center gap-1"
+                    >
+                      <ManageAccountsIcon />
+                      <small>Account Settings</small>
+                    </Link>
+                  </MenuItem>
+                )
               )}
             </div>
           )}

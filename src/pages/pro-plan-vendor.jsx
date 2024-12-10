@@ -10,6 +10,7 @@ import {
   Radio,
   Avatar,
   Checkbox,
+  CircularProgress,
 } from "@mui/material";
 import Image from "next/image";
 import ColorPicker from "@/components/colorPicker";
@@ -41,16 +42,13 @@ function ProPlanVendor() {
   const uploadCustomBgRef = useRef(null);
   const [allFonts, setAllFonts] = useState([]);
   const [isDataLoaded, setIsDataLoaded] = useState(false); // Track if data is loaded
-  const {
-    data: currentUser,
-    isLoading: isCurrentUserLoading,
-    error: isCurrentUserError,
-    refetch: currentUserRefetch,
-  } = useGetProfileQuery();
+
+  const { data: currentUser, refetch: currentUserRefetch } =
+    useGetProfileQuery();
+
   const {
     data: allFont,
     isLoading: isAllfontLoading,
-    error: isAllfontrError,
     refetch: AllfontRefetch,
   } = useGetAllFontsQuery();
 
@@ -58,9 +56,13 @@ function ProPlanVendor() {
     productImagePreview: null,
     customImagePreview: null,
   });
-  const [uploadProductImage] = useUploadAttachmentMutation();
-  const [uploadCustomImage] = useUploadAttachmentMutation();
-  const [createCertificate] = usePostCertificateInfoMutation();
+  const [uploadProductImage, { isLoading: uploadProductImageLoading }] =
+    useUploadAttachmentMutation();
+  const [uploadCustomImage, { isLoading: uploadCustomImageLoading }] =
+    useUploadAttachmentMutation();
+  const [createCertificate, { isLoading: createCertificateLoading }] =
+    usePostCertificateInfoMutation();
+
   const [toggleColorPicker, setToggleColorPicker] = useState({
     isOpenFontColorpicker: false,
     isOpenBgColorPicker: false,
@@ -71,9 +73,14 @@ function ProPlanVendor() {
     productImage: null,
     customBgImage: null,
   });
-  const handleProductImageInputClick = () =>
+
+  const handleProductImageInputClick = () => {
     uploadProductImageRef.current.click();
-  const handleCustomImageInputClick = () => uploadCustomBgRef.current.click();
+  };
+
+  const handleCustomImageInputClick = () => {
+    uploadCustomBgRef.current.click();
+  };
 
   const handleProductImageChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -111,13 +118,17 @@ function ProPlanVendor() {
 
   const handleSubmit = async (toggleDraft) => {
     if (!formData.name || !formData.description || !formData.product_sell) {
-      toast.warning("Form fields must be filled correctly");
+      toast.error(
+        (!formData.name && "Item Name is Required") ||
+          (!formData.description && "Item description is Required") ||
+          (!formData.product_sell && "Product sell information is Required")
+      );
     } else if (!acceptCertificate) {
       toast.info("You must accept acknowledge to continue");
     } else {
       try {
         // Upload Product Image
-        if (imageFiles.productImage) {
+        if (imageFiles.productImage && imageFiles.customBgImage) {
           const productImageFormData = new FormData();
           productImageFormData.append("file", imageFiles.productImage);
           productImageFormData.append("type", "text/photo");
@@ -129,60 +140,64 @@ function ProPlanVendor() {
           const productImageId = productImageResponse?.data?.id;
 
           // Upload Custom Background Image
-          if (imageFiles.customBgImage) {
-            const customBgFormData = new FormData();
-            customBgFormData.append("file", imageFiles.customBgImage);
-            customBgFormData.append("type", "text/photo");
-            const customBgResponse = await uploadCustomImage(
-              customBgFormData
-            ).unwrap();
+          const customBgFormData = new FormData();
+          customBgFormData.append("file", imageFiles.customBgImage);
+          customBgFormData.append("type", "text/photo");
+          const customBgResponse = await uploadCustomImage(
+            customBgFormData
+          ).unwrap();
 
-            // Extract the custom background image ID from the response
-            const customBgId = customBgResponse?.data?.id;
+          // Extract the custom background image ID from the response
+          const customBgId = customBgResponse?.data?.id;
 
-            // Create the Certificate
-            const certificateData = {
-              name: formData.name,
-              description: formData.description,
-              number_of_certificate: parseInt(formData.number_of_certificate),
-              font: formData.font,
-              font_color: formData.font_color,
-              bg_color: formData.bg_color,
-              saved_draft: toggleDraft, // Adjust based on your requirement
-              product_sell: formData.product_sell,
-              product_image_id: productImageId,
-              custom_bg: customBgId,
-            };
+          // Create the Certificate
+          const certificateData = {
+            name: formData.name,
+            description: formData.description,
+            number_of_certificate: parseInt(formData.number_of_certificate),
+            font: formData.font,
+            font_color: formData.font_color,
+            bg_color: formData.bg_color,
+            saved_draft: toggleDraft, // Adjust based on your requirement
+            product_sell: formData.product_sell,
+            product_image_id: productImageId,
+            custom_bg: customBgId,
+          };
 
-            const certificateResponse = await createCertificate(
-              certificateData
-            ).unwrap();
-            currentUserRefetch();
-            // Handle success - Reset form and show success message
-            setFormData(initialData);
-            setImageFiles({
-              productImage: null,
-              customBgImage: null,
-            });
-            setProductImagePreview({
-              productImagePreview: null,
-              customImagePreview: null,
-            });
-            setAcceptCertificate(false);
-            toast.success(
-              certificateResponse?.message ||
-                certificateResponse?.data?.message ||
-                "Certificate created successfully!"
-            );
-            router.push("/home-after-login");
-          } else {
-            toast.error("Custom background image not provided.");
-          }
+          const certificateResponse = await createCertificate(
+            certificateData
+          ).unwrap();
+          currentUserRefetch();
+          // Handle success - Reset form and show success message
+          setFormData(initialData);
+          setImageFiles({
+            productImage: null,
+            customBgImage: null,
+          });
+          setProductImagePreview({
+            productImagePreview: null,
+            customImagePreview: null,
+          });
+          setAcceptCertificate(false);
+          toast.success(
+            certificateResponse?.message ||
+              certificateResponse?.data?.message ||
+              "Certificate created successfully!"
+          );
+          router.push("/home-after-login");
         } else {
-          toast.error("Product image not provided.");
+          toast.error(
+            (!imageFiles.productImage && "Product image not provided.") ||
+              (!imageFiles.customBgImage &&
+                "Custom background image not provided.")
+          );
         }
       } catch (error) {
-        toast.error(error?.message || error?.data?.message || "Failed to create certificate. Please try again.");
+        toast.error(
+          error?.message ||
+            error?.data?.message ||
+            "Failed to create certificate. Please try again."
+        );
       }
     }
   };
@@ -198,6 +213,7 @@ function ProPlanVendor() {
       return { ...prev, productImagePreview: null, customImagePreview: null };
     });
     toast.success("Certificate Cleared!");
+    router.push("/home-after-login");
   };
 
   // Warning Tip When Both Background Color and Font Color are same....
@@ -221,6 +237,11 @@ function ProPlanVendor() {
       setAllFonts(allFont);
     }
   }, [allFont]);
+
+  useEffect(() => {
+    currentUserRefetch();
+    AllfontRefetch();
+  }, [currentUserRefetch, AllfontRefetch]);
 
   return (
     <>
@@ -354,7 +375,7 @@ function ProPlanVendor() {
             {/* HANDLE FONTS SETTINGS */}
             <fieldset className="max-w-[335px] w-full bg-white mt-[10px] rounded-[10px] border-[#606060] border-2 flex flex-col outline-none overflow-hidden">
               <legend className="text-sm md:text-base font-normal bg-white px-[3px] pb-[3px] tracking-tighter">
-                Fonts
+                {isAllfontLoading ? "Loading fonts please wait..." : "Fonts"}
               </legend>
               <select
                 onChange={(e) =>
@@ -626,22 +647,49 @@ function ProPlanVendor() {
             </Box>
             <Box display="flex" flexDirection="column" alignItems="end" gap={2}>
               <Button
-                disabled={!acceptCertificate}
+                disabled={
+                  !acceptCertificate ||
+                  uploadProductImageLoading ||
+                  uploadCustomImageLoading ||
+                  createCertificateLoading
+                }
                 variant="contained"
                 onClick={() => handleSubmit(false)}
                 className="bg-[#27A213] rounded-[7px] font-kodchasan px-4"
               >
-                Place Order
+                {uploadProductImageLoading ||
+                uploadCustomImageLoading ||
+                createCertificateLoading ? (
+                  <CircularProgress size="30px" />
+                ) : (
+                  "Place Order"
+                )}
               </Button>
               <Button
-                disabled={!acceptCertificate}
+                disabled={
+                  !acceptCertificate ||
+                  uploadProductImageLoading ||
+                  uploadCustomImageLoading ||
+                  createCertificateLoading
+                }
                 onClick={() => handleSubmit(true)}
                 variant="contained"
                 className="bg-[#81ACF3] rounded-[7px] font-kodchasan px-4"
               >
-                Save Draft
+                {uploadProductImageLoading ||
+                uploadCustomImageLoading ||
+                createCertificateLoading ? (
+                  <CircularProgress size="30px" />
+                ) : (
+                  "Save Draft"
+                )}
               </Button>
               <Button
+                disabled={
+                  uploadProductImageLoading ||
+                  uploadCustomImageLoading ||
+                  createCertificateLoading
+                }
                 onClick={handleCancelSubmit}
                 variant="contained"
                 className="bg-[#A21313] rounded-[7px] font-kodchasan px-4"

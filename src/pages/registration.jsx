@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { TextField, Button, Box } from "@mui/material";
+import { TextField, Button, Box, Stack, CircularProgress } from "@mui/material";
 import Footer from "@/components/footer";
 import Header from "@/components/header";
 import Link from "next/link";
@@ -14,7 +14,8 @@ const Registration = () => {
   const [validText, setValidText] = useState("");
   const [isValidating, setIsValidating] = useState(false);
 
-  const [validateCode] = useGetValidationCodeByCodeMutation();
+  const [validateCode, { isLoading: isValidateCodeLoading }] =
+    useGetValidationCodeByCodeMutation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -80,10 +81,16 @@ const Registration = () => {
           form="form1"
           type="submit"
           variant="contained"
-          disabled={!validCode || isValidating}
+          disabled={!validCode || isValidating || isValidateCodeLoading}
           className="mb-4 bg-[#22477F] rounded-[7px] font-kodchasan font-[700]"
         >
-          Continue &gt;&gt;
+          <Stack spacing={2} direction="row" alignItems="center">
+            {isValidateCodeLoading ? (
+              <CircularProgress size="30px" />
+            ) : (
+              <span>Continue &gt;&gt;</span>
+            )}
+          </Stack>
         </Button>
 
         <div className="w-[50%] h-[1px] bg-black"></div>

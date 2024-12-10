@@ -10,6 +10,7 @@ import {
   Radio,
   Avatar,
   Checkbox,
+  CircularProgress,
 } from "@mui/material";
 import Image from "next/image";
 import ColorPicker from "@/components/colorPicker";
@@ -20,8 +21,7 @@ import Footer from "@/components/footer";
 import { useRouter } from "next/router";
 import { useGetProfileQuery } from "@/slices/userApiSlice";
 import { useGetAllFontsQuery } from "@/slices/fontApiSlice";
-import WithAuth from '@/components/withAuth';
-
+import WithAuth from "@/components/withAuth";
 
 const initialData = {
   name: "",
@@ -36,21 +36,29 @@ const initialData = {
 };
 
 function Index() {
+  const router = useRouter();
   const [allFonts, setAllFonts] = useState([]);
   const [isDataLoaded, setIsDataLoaded] = useState(false); // Track if data is loaded
-  const { data: currentUser, isLoading: isCurrentUserLoading, error: isCurrentUserError, refetch: currentUserRefetch } = useGetProfileQuery();
-  const { data: allFont, isLoading: isAllfontLoading, error: isAllfontrError, refetch: AllfontRefetch } = useGetAllFontsQuery();
-
-
-
-  const router = useRouter();
   const uploadProductImageRef = useRef(null);
   const [productImagePreview, setProductImagePreview] = useState({
     productImagePreview: null,
     customImagePreview: null,
   });
-  const [uploadProductImage] = useUploadAttachmentMutation();
-  const [createCertificate] = usePostCertificateInfoMutation();
+
+  const { data: currentUser, refetch: currentUserRefetch } =
+    useGetProfileQuery();
+
+  const {
+    data: allFont,
+    isLoading: isAllfontLoading,
+    refetch: AllfontRefetch,
+  } = useGetAllFontsQuery();
+
+  const [uploadProductImage, { isLoading: uploadImgLoading }] =
+    useUploadAttachmentMutation();
+
+  const [createCertificate, { isLoading: createCertificateLoading }] =
+    usePostCertificateInfoMutation();
 
   const [toggleColorPicker, setToggleColorPicker] = useState({
     isOpenFontColorpicker: false,
@@ -63,7 +71,10 @@ function Index() {
     customBgImage: null,
   });
 
-  const handleProductImageInputClick = () => uploadProductImageRef.current.click();
+  const handleProductImageInputClick = () => {
+    uploadProductImageRef.current.click();
+  };
+
   const handleProductImageChange = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
@@ -83,7 +94,11 @@ function Index() {
 
   const handleSubmit = async (toggleDraft) => {
     if (!formData.name || !formData.description || !formData.product_sell) {
-      toast.warning("Form fields must be filled correctly");
+      toast.error(
+        (!formData.name && "Item Name is Required") ||
+          (!formData.description && "Item description is Required") ||
+          (!formData.product_sell && "Product sell information is Required")
+      );
     } else if (!acceptCertificate) {
       toast.info("You must accept acknowledge to continue");
     } else {
@@ -108,7 +123,7 @@ function Index() {
             font: formData.font,
             font_color: formData.font_color,
             bg_color: formData.bg_color,
-            saved_draft: toggleDraft, 
+            saved_draft: toggleDraft,
             product_sell: formData.product_sell,
             product_image_id: productImageId,
           };
@@ -116,7 +131,9 @@ function Index() {
           const certificateResponse = await createCertificate(
             certificateData
           ).unwrap();
-      
+
+          console.log("certificateResponse", certificateResponse);
+
           setFormData(initialData);
           setImageFiles({
             productImage: null,
@@ -135,7 +152,7 @@ function Index() {
           toast.error("Product image not provided.");
         }
       } catch (error) {
-        toast.error("Failed to create certificate. Please try again.");
+        toast.error(error?.data?.message || "All Fields are required");
       }
     }
   };
@@ -150,6 +167,7 @@ function Index() {
       return { ...prev, productImagePreview: null };
     });
     toast.success("Certificate Cleared!");
+    router.push("/home-after-login");
   };
 
   // Warning Tip When Both Background Color and Font Color are same....
@@ -170,9 +188,14 @@ function Index() {
 
   useEffect(() => {
     if (allFont) {
-      setAllFonts(allFont)
+      setAllFonts(allFont);
     }
-  }, [allFont])
+  }, [allFont]);
+
+  useEffect(() => {
+    currentUserRefetch();
+    AllfontRefetch();
+  }, [AllfontRefetch, currentUserRefetch]);
 
   return (
     <>
@@ -277,30 +300,39 @@ function Index() {
                 <legend className="bg-white text-sm text-black px-[3px] pb-[3pxpx] tracking-tighter">
                   Number of Certificates
                 </legend>
-                {isDataLoaded &&
+                {isDataLoaded && (
                   <div className="w-full h-full">
-                    <input type="number"
+                    <input
+                      type="number"
                       name="number_of_certificate_select"
                       min={0}
-                      max={currentUser?.subscriptionStatus?.remaining_certificates}
+                      max={
+                        currentUser?.subscriptionStatus?.remaining_certificates
+                      }
                       id="number_of_certificate_select"
                       className="outline-none border-none w-full h-full"
                       value={formData.number_of_certificate}
-                      onChange={(e) => setFormData(prev => ({ ...prev, number_of_certificate: e.target.value }))} />
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          number_of_certificate: e.target.value,
+                        }))
+                      }
+                    />
                     <strong className="text-white text-sm">{`Remaining ${currentUser?.subscriptionStatus?.remaining_certificates}`}</strong>
                   </div>
-                }
+                )}
               </fieldset>
             </Box>
-
           </Box>
           <Box className="max-w-[518px] w-full mx-auto my-2 border-2 border-[#606060] rounded-[30px] flex flex-col items-center py-4 px-2">
             {/* HANDLE FONTS SETTINGS */}
             <fieldset className="max-w-[335px] w-full bg-white mt-[10px] rounded-[10px] border-[#606060] border-2 flex flex-col outline-none overflow-hidden">
               <legend className="text-sm md:text-base font-normal bg-white px-[3px] pb-[3px] tracking-tighter">
-                Fonts
+                {isAllfontLoading ? "Loading please wait..." : "Fonts"}
               </legend>
               <select
+                disabled={isAllfontLoading}
                 onChange={(e) =>
                   setFormData((prev) => {
                     return { ...prev, font: e.target.value };
@@ -310,7 +342,10 @@ function Index() {
                 id="fonts"
                 className="w-full border-none outline-none h-[40px]"
               >
-                {allFonts && allFonts?.map((font, index) => <option key={index}>{font.name}</option>)}
+                {allFonts &&
+                  allFonts?.map((font, index) => (
+                    <option key={index}>{font.name}</option>
+                  ))}
               </select>
             </fieldset>
 
@@ -330,14 +365,16 @@ function Index() {
               </span>
 
               <div
-                className={`absolute left-0 top-0 z-10 flex flex-col bg-[#333333] gap-3 py-1 px-3 rounded-lg transition-all ${toggleColorPicker.isOpenFontColorpicker
-                  ? "block opacity-1 scale-1"
-                  : "hidden opacity-0 scale-0"
-                  }`}
+                className={`absolute left-0 top-0 z-10 flex flex-col bg-[#333333] gap-3 py-1 px-3 rounded-lg transition-all ${
+                  toggleColorPicker.isOpenFontColorpicker
+                    ? "block opacity-1 scale-1"
+                    : "hidden opacity-0 scale-0"
+                }`}
               >
                 <h1
                   style={{ color: formData.font_color }}
-                  className="text-base font-medium">
+                  className="text-base font-medium"
+                >
                   Font Color {formData.font_color}
                 </h1>
                 <ColorPicker
@@ -402,14 +439,13 @@ function Index() {
                 </span>
 
                 <div
-                  className={`absolute left-0 top-0 z-10 flex flex-col bg-[#333333] gap-3 py-1 px-3 rounded-lg transition-all ${toggleColorPicker.isOpenBgColorPicker
-                    ? "block opacity-1 scale-1"
-                    : "hidden opacity-0 scale-0"
-                    }`}
+                  className={`absolute left-0 top-0 z-10 flex flex-col bg-[#333333] gap-3 py-1 px-3 rounded-lg transition-all ${
+                    toggleColorPicker.isOpenBgColorPicker
+                      ? "block opacity-1 scale-1"
+                      : "hidden opacity-0 scale-0"
+                  }`}
                 >
-                  <h1
-                    className="text-base font-medium w-full h-[30px] text-white"
-                  >
+                  <h1 className="text-base font-medium w-full h-[30px] text-white">
                     Background {formData.bg_color}
                   </h1>
                   <ColorPicker
@@ -478,7 +514,6 @@ function Index() {
                   </Typography>
                 </Box>
               </Box>
-       
             </Box>
           </Box>
           <Box className="max-w-[476px] w-full mx-auto mb-6">
@@ -557,22 +592,39 @@ function Index() {
             </Box>
             <Box display="flex" flexDirection="column" alignItems="end" gap={2}>
               <Button
-                disabled={!acceptCertificate}
+                disabled={
+                  !acceptCertificate ||
+                  uploadImgLoading ||
+                  createCertificateLoading
+                }
                 variant="contained"
                 onClick={() => handleSubmit(false)}
                 className="bg-[#27A213] rounded-[7px] font-kodchasan px-4"
               >
-                Place Order
+                {uploadImgLoading || createCertificateLoading ? (
+                  <CircularProgress size="24px" />
+                ) : (
+                  "Place Order"
+                )}
               </Button>
               <Button
-                disabled={!acceptCertificate}
+                disabled={
+                  !acceptCertificate ||
+                  uploadImgLoading ||
+                  createCertificateLoading
+                }
                 onClick={() => handleSubmit(true)}
                 variant="contained"
                 className="bg-[#81ACF3] rounded-[7px] font-kodchasan px-4"
               >
-                Save Draft
+                {uploadImgLoading || createCertificateLoading ? (
+                  <CircularProgress size="24px" />
+                ) : (
+                  "Save Draft"
+                )}
               </Button>
               <Button
+                disabled={uploadImgLoading || createCertificateLoading}
                 onClick={handleCancelSubmit}
                 variant="contained"
                 className="bg-[#A21313] rounded-[7px] font-kodchasan px-4"
@@ -588,6 +640,4 @@ function Index() {
   );
 }
 
-
-export default WithAuth(Index, ['VENDOR']);
-
+export default WithAuth(Index, ["VENDOR"]);

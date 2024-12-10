@@ -9,6 +9,8 @@ import {
   Typography,
   IconButton,
   InputAdornment,
+  Stack,
+  CircularProgress,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import Icon from "../assets/images/elements.svg";
@@ -19,9 +21,13 @@ import { useRouter } from "next/router";
 import { useGetActiveCountriesQuery } from "@/slices/countriesApiSlice";
 import { useUploadAttachmentMutation } from "@/slices/uploadAttachmentApiSlice";
 import { toast } from "react-toastify";
-import { useRegisterMutation } from "@/slices/userApiSlice";
+import {
+  useFindEmailMutation,
+  useRegisterMutation,
+} from "@/slices/userApiSlice";
 
 const CodeRegistration = () => {
+  const router = useRouter();
   const [uploadResult, setUploadResult] = useState(null);
   const [errors, setErrors] = useState({});
   const [selectedCountry, setSelectedCountry] = useState({});
@@ -41,17 +47,29 @@ const CodeRegistration = () => {
   const [acceptForm, setAcceptForm] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const router = useRouter();
-  const [uploadAttachment] = useUploadAttachmentMutation();
-  const [register, { isLoading }] = useRegisterMutation();
   const uploadProductImageRef = useRef(null);
   const [imageFiles, setImageFiles] = useState({
     productImage: null,
   });
+
+  const [IsEmailAlreadyExists, { isLoading: IsEmailAlreadyExistsLoading }] =
+    useFindEmailMutation();
+
   const [productImagePreview, setProductImagePreview] = useState({
     productImagePreview: null,
     customImagePreview: null,
   });
+
+  const [uploadAttachment, { isLoading: isUploadAttachmentLoading }] =
+    useUploadAttachmentMutation();
+
+  const [register, { isLoading, isRegisterLoading }] = useRegisterMutation();
+
+  const {
+    data: countries = [],
+    error: countryError,
+    isLoading: isCountryLoading,
+  } = useGetActiveCountriesQuery();
 
   const handleProductImageChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -72,14 +90,9 @@ const CodeRegistration = () => {
     }
   };
 
-  const handleProductImageInputClick = () =>
+  const handleProductImageInputClick = () => {
     uploadProductImageRef.current.click();
-
-  const {
-    data: countries = [],
-    error: countryError,
-    isLoading: isCountryLoading,
-  } = useGetActiveCountriesQuery();
+  };
 
   useEffect(() => {
     setValidationCodeId(localStorage.getItem("validCodeId"));
@@ -112,6 +125,7 @@ const CodeRegistration = () => {
   // testing
   const isValidPassword = (password) => {
     const minLength = 8; // Example minimum length
+    const maxLength = 20; // Example minimum length
     const hasUpperCase = /[A-Z]/.test(password);
     const hasLowerCase = /[a-z]/.test(password);
     const hasNumbers = /\d/.test(password);
@@ -119,11 +133,33 @@ const CodeRegistration = () => {
 
     return (
       password.length >= minLength &&
+      password.length <= maxLength &&
       hasUpperCase &&
       hasLowerCase &&
       hasNumbers &&
       hasSpecialChars
     );
+  };
+
+  const checkIsEmailAlreadyTaken = async (userEmail) => {
+    try {
+      const res = await IsEmailAlreadyExists({
+        email: userEmail,
+        role: "VENDOR",
+      }).unwrap();
+      if (res?.length > 0) {
+        const isEmail = res?.filter((e) => e === email);
+        if (isEmail?.length > 0) {
+          return true;
+        } else {
+          false;
+        }
+      } else {
+        return false;
+      }
+    } catch (error) {
+      return true;
+    }
   };
 
   const submitHandler = async (e) => {
@@ -152,7 +188,15 @@ const CodeRegistration = () => {
       {
         condition: !isValidPassword(password),
         message:
-          "Password must be at least 8 characters long and include upper/lowercase letters, numbers, and special characters.",
+          "Password must be at least 8 characters long and must be less then 20 characters and include upper/lowercase letters, numbers, and special characters.",
+      },
+      {
+        condition: !website,
+        message: "Website URL must be a valid URL.",
+      },
+      {
+        condition: await checkIsEmailAlreadyTaken(email),
+        message: "Email is already taken.",
       },
     ];
 
@@ -312,7 +356,7 @@ const CodeRegistration = () => {
               <Box className="flex items-center">
                 <TextField
                   select
-                  sx={textFieldCodeStyles }
+                  sx={textFieldCodeStyles}
                   variant="outlined"
                   label="code"
                   name="countryCode"
@@ -328,7 +372,7 @@ const CodeRegistration = () => {
 
                 <TextField
                   label="Phone"
-                  type="tel"
+                  type="number"
                   variant="outlined"
                   fullWidth
                   name="phone"
@@ -385,9 +429,15 @@ const CodeRegistration = () => {
                     <InputAdornment position="end">
                       <IconButton
                         aria-label="toggle password visibility"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
                       >
-                        {showConfirmPassword ? <Visibility /> : <VisibilityOff />}
+                        {showConfirmPassword ? (
+                          <Visibility />
+                        ) : (
+                          <VisibilityOff />
+                        )}
                       </IconButton>
                     </InputAdornment>
                   ),
@@ -499,7 +549,12 @@ const CodeRegistration = () => {
             </Typography>
 
             <Button
-              disabled={!acceptForm}
+              disabled={
+                !acceptForm ||
+                isUploadAttachmentLoading ||
+                isRegisterLoading ||
+                IsEmailAlreadyExistsLoading
+              }
               variant="contained"
               className="bg-[#22477F] rounded-[7px] font-kodchasan"
               sx={{
@@ -507,7 +562,15 @@ const CodeRegistration = () => {
               }}
               onClick={submitHandler}
             >
-              Continue
+              <Stack spacing={2} direction="row" alignItems="center">
+                {isUploadAttachmentLoading ||
+                isRegisterLoading ||
+                IsEmailAlreadyExistsLoading ? (
+                  <CircularProgress size="30px" />
+                ) : (
+                  <span>Continue</span>
+                )}
+              </Stack>
             </Button>
           </Box>
         </Box>
