@@ -9,16 +9,29 @@ import { useUploadAttachmentMutation } from "@/slices/uploadAttachmentApiSlice";
 import {
   useUpdateProfileMutation,
   useGetProfileQuery,
+  useLogoutMutation,
 } from "@/slices/userApiSlice";
 import { useGetActiveCountriesQuery } from "@/slices/countriesApiSlice";
 import sample from "@/assets/images/sample.svg";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import WithAuth from "@/components/withAuth";
-import { CircularProgress, Stack } from "@mui/material";
+import { CircularProgress } from "@mui/material";
+import LogoutIcon from "@mui/icons-material/Logout";
+import HomeIcon from "@mui/icons-material/Home";
+import { logout } from "@/slices/authSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { useRouter } from "next/navigation";
 
 const AccountSettings = () => {
-  // Define initialFormData as a constant to avoid recreating it on each render
+  const [logoutApiCall] = useLogoutMutation();
+  const dispatch = useDispatch();
+  const router = useRouter();
+
+  const isUserHaveCodeFromAdmin = useSelector(
+    (state) => state.auth.userInfo?.user
+  );
+
   const initialFormData = React.useMemo(
     () => ({
       primary_content: "",
@@ -31,12 +44,18 @@ const AccountSettings = () => {
       user_name: "",
       social_media: ["", "", ""],
       website_url: "",
+      email: "",
+      current_password: "",
+      new_password: "",
+      confirm_password: "",
     }),
     []
   );
 
   const [subscriptionStatusName, setSubscriptionStatusName] = useState("None");
   const [editingField, setEditingField] = useState(null);
+  const uploadPicRef = useRef(null);
+  const [formData, setFormData] = useState(initialFormData);
 
   const { data: activeCountries } = useGetActiveCountriesQuery();
   const { data: userProfile, refetch: userProfileRefetch } =
@@ -45,9 +64,6 @@ const AccountSettings = () => {
     useUpdateProfileMutation();
   const [uploadAttachment, { isLoading: isAttachmentLoading }] =
     useUploadAttachmentMutation();
-  const uploadPicRef = useRef(null);
-
-  const [formData, setFormData] = useState(initialFormData);
 
   const handleFileChange = useCallback((e) => {
     const file = e.target.files[0];
@@ -80,40 +96,100 @@ const AccountSettings = () => {
     setFormData((prev) => ({ ...prev, country: Number(selectedCountry) }));
   };
 
+  const handleLogout = async () => {
+    try {
+      const response = await logoutApiCall().unwrap();
+      dispatch(logout());
+      toast.success(
+        response?.message ||
+          response?.data?.message ||
+          "Successfully logged out!"
+      );
+      router.push("/");
+    } catch (error) {
+      toast.error(
+        error?.message ||
+          error?.data?.message ||
+          "Failed to log out. Please try again."
+      );
+    }
+  };
+
   const handleSubmit = async () => {
     try {
-      const uploadLogoData = new FormData();
-      uploadLogoData.append("file", formData.changedImageFile);
-      uploadLogoData.append("type", "text/photo");
+      if (
+        formData?.confirm_password ||
+        formData?.new_password ||
+        formData?.confirm_password
+      ) {
+        if (formData.new_password !== formData.confirm_password) {
+          toast.info("New Password and Confirm Password should be same");
+          return;
+        } else if (
+          formData?.current_password === formData.new_password ||
+          formData?.current_password === formData.confirm_password
+        ) {
+          toast.info("Current and new Passwords are same");
+          return;
+        }
+      } else {
+        const uploadLogoData = new FormData();
+        uploadLogoData.append("file", formData.changedImageFile);
+        uploadLogoData.append("type", "text/photo");
 
-      const uploadedLogo = formData.changedImageFile
-        ? await uploadAttachment(uploadLogoData).unwrap()
-        : null;
-      const logoImageId = uploadedLogo?.data?.id;
+        const uploadedLogo = formData.changedImageFile
+          ? await uploadAttachment(uploadLogoData).unwrap()
+          : null;
+        const logoImageId = uploadedLogo?.data?.id;
 
-      // Filter out empty links
-      const filteredOtherLinks = formData.other_links.filter(
-        (link) => link.trim() !== ""
-      );
-      const filteredSocialMediaLinks = formData.social_media.filter(
-        (link) => link.trim() !== ""
-      );
+        // Filter out empty links
+        const filteredOtherLinks = formData.other_links.filter(
+          (link) => link.trim() !== ""
+        );
+        const filteredSocialMediaLinks = formData.social_media.filter(
+          (link) => link.trim() !== ""
+        );
 
-      const dataToSubmit = {
-        primary_content: formData.primary_content,
-        country_id: formData.country,
-        phone: formData.phone,
-        about_brand: formData.about_brand,
-        user_name: formData.user_name,
-        social_media: filteredSocialMediaLinks,
-        website_url: formData.website_url,
-        other_links: filteredOtherLinks,
-        attachment_id: logoImageId || formData.profileImage?.id,
-      };
+        let dataToSubmit = {};
+        if (
+          formData?.confirm_password ||
+          formData?.new_password ||
+          formData?.confirm_password
+        ) {
+          dataToSubmit = {
+            primary_content: formData.primary_content,
+            country_id: formData.country,
+            phone: formData.phone,
+            about_brand: formData.about_brand,
+            user_name: formData.user_name,
+            social_media: filteredSocialMediaLinks,
+            website_url: formData.website_url,
+            other_links: filteredOtherLinks,
+            attachment_id: logoImageId || formData.profileImage?.id,
+            email: formData.email,
+            old_password: formData.current_password,
+            new_password: formData.new_password,
+          };
+        } else {
+          dataToSubmit = {
+            primary_content: formData.primary_content,
+            country_id: formData.country,
+            phone: formData.phone,
+            about_brand: formData.about_brand,
+            user_name: formData.user_name,
+            social_media: filteredSocialMediaLinks,
+            website_url: formData.website_url,
+            other_links: filteredOtherLinks,
+            attachment_id: logoImageId || formData.profileImage?.id,
+            email: formData.email,
+          };
+        }
 
-      const res = await updateUser(dataToSubmit).unwrap();
-      toast.success(res?.message || res?.data?.message || "User Updated.");
-      userProfileRefetch();
+        const res = await updateUser(dataToSubmit).unwrap();
+        toast.success(res?.message || res?.data?.message || "User Updated.");
+        userProfileRefetch();
+        handleLogout();
+      }
     } catch (error) {
       toast.error(error?.message || error?.data?.message || "Error in Submit");
     }
@@ -145,30 +221,38 @@ const AccountSettings = () => {
     if (userProfile) {
       setFormData({
         ...initialFormData,
-        primary_content: userProfile.primary_content || "",
+        primary_content: userProfile?.primary_content || "",
         phone: userProfile.phone || "",
-        about_brand: userProfile.about_brand || "",
-        country: userProfile.country?.id || null,
-        other_links: userProfile.other_links
+        about_brand: userProfile?.about_brand || "",
+        country: userProfile?.country?.id || null,
+        other_links: userProfile?.other_links
           ?.concat(["", "", ""])
           ?.slice(0, 3) || ["", "", ""],
-        profileImage: userProfile.vendor_logo || sample,
-        user_name: userProfile.vendor_name || "",
-        social_media: userProfile.social_media
+        profileImage: userProfile?.vendor_logo || sample,
+        user_name: userProfile?.vendor_name || "",
+        social_media: userProfile?.social_media
           ?.concat(["", "", ""])
           ?.slice(0, 3) || ["", "", ""],
-        website_url: userProfile.website_url || "http://www.example.url.com",
+        website_url: userProfile?.website_url || "",
+        email: userProfile?.email,
       });
-    }
-  }, [userProfile, initialFormData]);
-
-  useEffect(() => {
-    if (userProfile?.subscriptionStatus?.subscriptionPlan?.name) {
       setSubscriptionStatusName(
         userProfile.subscriptionStatus.subscriptionPlan.name
       );
     }
-  }, [userProfile?.subscriptionStatus?.subscriptionPlan?.name]);
+  }, [userProfile, initialFormData]);
+
+  // useEffect(() => {
+  //   if (userProfile?.subscriptionStatus?.subscriptionPlan?.name) {
+
+  //   }
+  // }, [userProfile?.subscriptionStatus?.subscriptionPlan?.name]);
+
+  let userRedirection =
+    isUserHaveCodeFromAdmin?.validation_code?.code &&
+    isUserHaveCodeFromAdmin?.subscriptionStatus
+      ? "/home"
+      : "/";
 
   return (
     <>
@@ -176,7 +260,19 @@ const AccountSettings = () => {
         <title>Account-Settings</title>
       </Head>
       <div className="w-full min-h-screen flex flex-col justify-between items-center">
-        <Header disableAccountSettings={"Yes"} />
+        <Header
+          attributes={{
+            to: userRedirection,
+            menuItems: [
+              {
+                to: userRedirection,
+                title: "HOME",
+                icon: HomeIcon,
+              },
+              { to: "/", title: "LOGOUT", icon: LogoutIcon, logout: true },
+            ],
+          }}
+        />
         <div className="w-[calc(100%-12px)] sm:max-w-[730px] md:w-[730px] h-auto bg-[#273F7C] text-white rounded-[30px] overflow-hidden my-16 md:my-20 mx-3">
           <div className="w-full h-full flex flex-col items-center justify-center px-2 sm:px-12 pt-2 pb-7 sm:py-7 font-koHo text-base gap-4">
             <div className="w-full h-auto flex justify-center gap-5 md:gap-12 flex-col md:flex-row">
@@ -246,51 +342,52 @@ const AccountSettings = () => {
 
               <form className="md:w-auto h-auto flex flex-col justify-between gap-2 sm:gap-3 md:gap-5 py-3">
                 {/* PRIMARY CONTENT AND PHONE AND WEBSITE_URL AND USER_NAME INPUTS  */}
-                {["primary_content", "user_name", "phone", "website_url"].map(
-                  (field, idx) => (
-                    <div
-                      key={idx}
-                      className="form-field w-full h-auto flex flex-col items-start gap-1"
-                    >
-                      <div className="w-full flex items-center justify-between">
-                        <label
-                          htmlFor={field}
-                          className="font-normal text-base"
-                        >
-                          {field.replace(/_/g, " ").toUpperCase()}:
-                        </label>
-                        <label
-                          htmlFor={field}
-                          className="font-normal text-base"
-                        >
-                          <Edit
-                            className="cursor-pointer hover:scale-125 hover:-rotate-45"
-                            onClick={() =>
-                              setEditingField(
-                                editingField === field ? null : field
-                              )
-                            }
-                          />
-                        </label>
-                      </div>
-                      <div className="w-full pr-10">
-                        <input
-                          readOnly={editingField !== field}
-                          id={field}
-                          type={field === "website_url" ? "url" : "text"}
-                          name={field}
-                          value={formData[field]}
-                          onChange={handleFormDataChange}
-                          className={`border-none outline-none text-base font-bold ml-3 w-full px-1 py-2 rounded-sm ${
-                            editingField === field
-                              ? "bg-white text-black"
-                              : "bg-inherit text-white"
-                          }`}
+                {[
+                  "primary_content",
+                  "user_name",
+                  "phone",
+                  "website_url",
+                  "email",
+                  "current_password",
+                  "new_password",
+                  "confirm_password",
+                ].map((field, idx) => (
+                  <div
+                    key={idx}
+                    className="form-field w-full h-auto flex flex-col items-start gap-1"
+                  >
+                    <div className="w-full flex items-center justify-between">
+                      <label htmlFor={field} className="font-normal text-base">
+                        {field.replace(/_/g, " ").toUpperCase()}:
+                      </label>
+                      <label htmlFor={field} className="font-normal text-base">
+                        <Edit
+                          className="cursor-pointer hover:scale-125 hover:-rotate-45"
+                          onClick={() =>
+                            setEditingField(
+                              editingField === field ? null : field
+                            )
+                          }
                         />
-                      </div>
+                      </label>
                     </div>
-                  )
-                )}
+                    <div className="w-full pr-10">
+                      <input
+                        readOnly={editingField !== field}
+                        id={field}
+                        type={field === "website_url" ? "url" : "text"}
+                        name={field}
+                        value={formData[field]}
+                        onChange={handleFormDataChange}
+                        className={`border-none outline-none text-base font-bold ml-3 w-full px-1 py-2 rounded-sm ${
+                          editingField === field
+                            ? "bg-white text-black"
+                            : "bg-inherit text-white"
+                        }`}
+                      />
+                    </div>
+                  </div>
+                ))}
 
                 {/* COUNTRY SELECT BOX */}
                 <div className="form-field w-full h-auto flex flex-col items-start gap-1">

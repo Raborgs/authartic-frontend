@@ -25,6 +25,7 @@ import {
   useAdminNewReportProblemQuery,
   useAdminResponseReportMutation,
 } from "@/slices/reportProblemApiSlice";
+import LogoutIcon from "@mui/icons-material/Logout";
 
 export default function PaginatedTable() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -189,7 +190,14 @@ export default function PaginatedTable() {
 
   return (
     <div className="w-screen min-h-screen flex flex-col">
-      <Header />
+      <Header
+        attributes={{
+          to: "/admin-dashboard",
+          menuItems: [
+            { to: "/", title: "LOGOUT", icon: LogoutIcon, logout: true },
+          ],
+        }}
+      />
       <Box sx={{ width: "100%", height: "auto", flexGrow: 1 }}>
         <div className="w-full md:w-[90%] lg:w-[70%] mx-auto mt-3">
           <Box sx={{ mb: "2rem" }}>

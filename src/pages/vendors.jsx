@@ -21,6 +21,7 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { TextField, InputAdornment, Box } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import { toast } from "react-toastify";
+import LogoutIcon from "@mui/icons-material/Logout";
 
 const options = [
   { name: "Verified users", is_verified: true },
@@ -185,6 +186,7 @@ export default function UsersTable() {
               ) : (
                 <div
                   style={{
+                    height: "100%",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "start",
@@ -258,7 +260,14 @@ export default function UsersTable() {
       </Head>
 
       <div className="w-full min-h-screen flex flex-col justify-between">
-        <Header />
+        <Header
+          attributes={{
+            to: "/admin-dashboard",
+            menuItems: [
+              { to: "/", title: "LOGOUT", icon: LogoutIcon, logout: true },
+            ],
+          }}
+        />
 
         <div className="w-full flex flex-col justify-between mx-auto max-w-screen-xl px-2 md:px-7">
           <div className="my-7 text-left w-full">
@@ -385,7 +394,7 @@ export default function UsersTable() {
         </div>
 
         <Footer />
-        
+
         <VerificationModal
           open={open}
           handleClose={() => setOpen(false)}

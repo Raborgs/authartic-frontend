@@ -8,19 +8,53 @@ import {
 } from "@mui/material";
 import faqAsset from "@/assets/jsonData/FAQAsset";
 import Header from "@/components/header";
+import HomeIcon from "@mui/icons-material/Home";
+import LogoutIcon from "@mui/icons-material/Logout";
+import { useSelector } from "react-redux";
 import Footer from "@/components/footer";
 
 const FAQ = () => {
+  const isUserHaveCodeFromAdmin = useSelector(
+    (state) => state.auth.userInfo?.user
+  );
   const [expanded, setExpanded] = useState(false);
   const [chooseIndex, setChooseIndex] = useState(null);
 
   const handleChange = () => {
     setExpanded(!expanded);
   };
+
+  let userRedirection =
+    isUserHaveCodeFromAdmin?.validation_code?.code &&
+    isUserHaveCodeFromAdmin?.subscriptionStatus;
+  let attributes = {};
+
+  if (isUserHaveCodeFromAdmin?.role === "ADMIN") {
+    attributes = {
+      to: "/admin-dashboard",
+      menuItems: [
+        { to: "/admin-dashboard", title: "HOME", icon: HomeIcon },
+        { to: "/", title: "LOGOUT", icon: LogoutIcon, logout: true },
+      ],
+    };
+  } else if (userRedirection) {
+    attributes = {
+      to: "/home",
+      menuItems: [
+        { to: "/home", title: "HOME", icon: HomeIcon },
+        { to: "/", title: "LOGOUT", icon: LogoutIcon, logout: true },
+      ],
+    };
+  } else {
+    attributes = {
+      to: "/",
+      menuItems: [{ to: "/", title: "HOME", icon: HomeIcon }],
+    };
+  }
+
   return (
     <main className="w-full min-h-screen flex flex-col justify-between">
-      <Header />
-
+      <Header attributes={attributes} />
       <div className="w-full xl:max-w-[80%] h-full flex flex-col items-center justify-start gap-11 xl:gap-[3vw] px-2 sm:px-4 md:px-10 mx-auto my-5">
         {faqAsset &&
           faqAsset.map((asset, index) => (

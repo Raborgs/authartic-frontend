@@ -22,6 +22,8 @@ import { useRouter } from "next/router";
 import { useGetProfileQuery } from "@/slices/userApiSlice";
 import { useGetAllFontsQuery } from "@/slices/fontApiSlice";
 import WithAuth from "@/components/withAuth";
+import LogoutIcon from "@mui/icons-material/Logout";
+import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
 
 const initialData = {
   name: "",
@@ -71,6 +73,9 @@ function Index() {
     customBgImage: null,
   });
 
+  const [placeOrderLoading, setPlaceOrderLoading] = useState(false);
+  const [saveDraftLoading, setSaveDraftLoading] = useState(false);
+
   const handleProductImageInputClick = () => {
     uploadProductImageRef.current.click();
   };
@@ -103,7 +108,12 @@ function Index() {
       toast.info("You must accept acknowledge to continue");
     } else {
       try {
-        // Upload Product Image
+        if (toggleDraft) {
+          setSaveDraftLoading(true);
+        } else {
+          setPlaceOrderLoading(true);
+        }
+
         if (imageFiles.productImage) {
           const productImageFormData = new FormData();
           productImageFormData.append("file", imageFiles.productImage);
@@ -112,10 +122,8 @@ function Index() {
             productImageFormData
           ).unwrap();
 
-          // Extract the product image ID from the response
           const productImageId = productImageResponse?.data?.id;
 
-          // Create the Certificate
           const certificateData = {
             name: formData.name,
             description: formData.description,
@@ -132,8 +140,6 @@ function Index() {
             certificateData
           ).unwrap();
 
-          console.log("certificateResponse", certificateResponse);
-
           setFormData(initialData);
           setImageFiles({
             productImage: null,
@@ -147,12 +153,15 @@ function Index() {
               certificateResponse?.data?.message ||
               "Certificate created successfully!"
           );
-          router.push("/home-after-login");
+          router.push("/home");
         } else {
           toast.error("Product image not provided.");
         }
       } catch (error) {
         toast.error(error?.data?.message || "All Fields are required");
+      } finally {
+        setPlaceOrderLoading(false);
+        setSaveDraftLoading(false);
       }
     }
   };
@@ -167,7 +176,7 @@ function Index() {
       return { ...prev, productImagePreview: null };
     });
     toast.success("Certificate Cleared!");
-    router.push("/home-after-login");
+    router.push("/home");
   };
 
   // Warning Tip When Both Background Color and Font Color are same....
@@ -199,7 +208,19 @@ function Index() {
 
   return (
     <>
-      <Header />
+      <Header
+        attributes={{
+          to: "/home",
+          menuItems: [
+            { to: "/", title: "LOGOUT", icon: LogoutIcon, logout: true },
+            {
+              to: "/account-settings",
+              title: "Account Settings",
+              icon: ManageAccountsIcon,
+            },
+          ],
+        }}
+      />
       <Box className="min-h-screen">
         <Box className="max-w-[602px] w-full mx-auto bg-[#22477F] py-6 my-6 rounded-[30px] px-[20px]">
           {/* NAME AND DESCRIPTION FIELDS */}
@@ -264,10 +285,10 @@ function Index() {
             />
           </Box>
 
-          <Box className="flex flex-col md:flex-row md:justify-around items-center mb-6">
+          <Box className="flex flex-col sm:flex-row md:justify-between items-center mb-6 max-w-[518px] w-full mx-auto">
             {/* HANDLE PRODUCT IMAGE UPLOAD */}
-            <Box className="md:bg-[#ADA8A8] bg-transparent rounded-br-[20px] rounded-bl-[20px] p-8 max-w-[280px] w-full mb-4 mr-[1.3rem] md:mb-0">
-              <Button className="flex text-black bg-[#fff] rounded-[41.47px] px-4 py-4 gap-2">
+            <Box className="sm:bg-[#ADA8A8] bg-transparent rounded-br-[20px] rounded-bl-[20px] p-8 max-w-[280px] w-full mb-4 mr-[1.3rem] md:mb-0">
+              <div className="flex items-center text-black bg-[#fff] rounded-[41.47px] px-4 py-4 gap-2">
                 {productImagePreview.productImagePreview ? (
                   <Avatar
                     alt="Remy Sharp"
@@ -285,7 +306,7 @@ function Index() {
                   ref={uploadProductImageRef}
                   onChange={handleProductImageChange}
                 />
-              </Button>
+              </div>
               <Button
                 className=" bg-[#3276E8] text-white rounded-[41.47px] w-full px-4 py-2 mt-3"
                 onClick={handleProductImageInputClick}
@@ -296,7 +317,7 @@ function Index() {
 
             {/* HANDLE NUMBER OF CERTIFICATES */}
             <Box className="flex justify-center w-full md:w-auto">
-              <fieldset className="max-w-[193px] h-[80px] bg-white rounded-[10px] border-2 border-[#606060] px-2 flex flex-col">
+              <fieldset className="w-full sm:max-w-[193px] h-[80px] bg-white rounded-[10px] border-2 border-[#606060] px-2 flex flex-col">
                 <legend className="bg-white text-sm text-black px-[3px] pb-[3pxpx] tracking-tighter">
                   Number of Certificates
                 </legend>
@@ -365,6 +386,11 @@ function Index() {
               </span>
 
               <div
+                onMouseLeave={() => {
+                  setToggleColorPicker((prev) => {
+                    return { ...prev, isOpenFontColorpicker: false };
+                  });
+                }}
                 className={`absolute left-0 top-0 z-10 flex flex-col bg-[#333333] gap-3 py-1 px-3 rounded-lg transition-all ${
                   toggleColorPicker.isOpenFontColorpicker
                     ? "block opacity-1 scale-1"
@@ -411,10 +437,11 @@ function Index() {
             </Box>
 
             {/* HANDLE BACKGROUND COLOR AND BACKGROUND IMAGE SETTINGS */}
-            <Box className="flex my-6 w-full justify-around">
+            <Box className="flex my-6 w-full justify-around flex-col gap-4 sm:flex-row sm:gap-0">
               <Box className="flex flex-col justify-center items-center relative">
                 <Box className="flex items-center justify-around">
                   <Radio
+                    checked
                     sx={{
                       color: "#fff",
                     }}
@@ -425,7 +452,7 @@ function Index() {
                 </Box>
                 <span
                   style={{ backgroundColor: formData.bg_color }}
-                  className="min-w-[70px] h-[45px] rounded-sm inline-block text-center relative cursor-pointer"
+                  className="w-[100px] h-[80px] rounded-[12px] inline-block text-center relative cursor-pointer"
                   onClick={() => {
                     setToggleColorPicker((prev) => {
                       return {
@@ -439,6 +466,14 @@ function Index() {
                 </span>
 
                 <div
+                  onMouseLeave={() => {
+                    setToggleColorPicker((prev) => {
+                      return {
+                        ...prev,
+                        isOpenBgColorPicker: false,
+                      };
+                    });
+                  }}
                   className={`absolute left-0 top-0 z-10 flex flex-col bg-[#333333] gap-3 py-1 px-3 rounded-lg transition-all ${
                     toggleColorPicker.isOpenBgColorPicker
                       ? "block opacity-1 scale-1"
@@ -484,8 +519,8 @@ function Index() {
                 </div>
               </Box>
               {/* HANDLE CUSTOM BACKGROUND IMAGE UPLOAD */}
-              <Box className="flex flex-col justify-center items-center border-xl relative mt-4">
-                <Box className="flex items-center">
+              <Box className="flex flex-col justify-center items-center border-xl relative">
+                <Box className="flex items-center p-1">
                   <Radio
                     disabled
                     sx={{
@@ -497,15 +532,15 @@ function Index() {
                   </Typography>
                 </Box>
                 <Box className="flex justify-around items-center opacity-50 pointer-events-none">
-                  <Box className="flex flex-col justify-center items-center text-black bg-[#fff] rounded-[12px] ml-5">
+                  <Box className="flex flex-col justify-center items-center text-black bg-[#fff] rounded-[12px] ml-5 w-[100px] h-[80px]">
                     <Image src={Icon} alt="Icon" />
-                    <Typography className="font-DMSans">
+                    <Typography className="font-DMSans text-center">
                       Click to upload
                     </Typography>
                   </Box>
                 </Box>
                 <Box
-                  className="absolute inset-0 bg-black bg-opacity-50 flex justify-center items-center rounded-[28px] max-w-[300px] w-full ml-2 p-2 select-none cursor-pointer hover:shadow-lg "
+                  className="absolute inset-0 bg-black bg-opacity-50 flex justify-center items-center rounded-[28px] w-full p-2 select-none cursor-pointer hover:shadow-lg "
                   onClick={() => router.push("package-plans")}
                 >
                   <Typography className="text-white text-center text-[12px]">
@@ -593,15 +628,13 @@ function Index() {
             <Box display="flex" flexDirection="column" alignItems="end" gap={2}>
               <Button
                 disabled={
-                  !acceptCertificate ||
-                  uploadImgLoading ||
-                  createCertificateLoading
+                  !acceptCertificate || placeOrderLoading || saveDraftLoading
                 }
                 variant="contained"
                 onClick={() => handleSubmit(false)}
                 className="bg-[#27A213] rounded-[7px] font-kodchasan px-4"
               >
-                {uploadImgLoading || createCertificateLoading ? (
+                {placeOrderLoading ? (
                   <CircularProgress size="24px" />
                 ) : (
                   "Place Order"
@@ -609,22 +642,20 @@ function Index() {
               </Button>
               <Button
                 disabled={
-                  !acceptCertificate ||
-                  uploadImgLoading ||
-                  createCertificateLoading
+                  !acceptCertificate || placeOrderLoading || saveDraftLoading
                 }
                 onClick={() => handleSubmit(true)}
                 variant="contained"
                 className="bg-[#81ACF3] rounded-[7px] font-kodchasan px-4"
               >
-                {uploadImgLoading || createCertificateLoading ? (
+                {saveDraftLoading ? (
                   <CircularProgress size="24px" />
                 ) : (
                   "Save Draft"
                 )}
               </Button>
               <Button
-                disabled={uploadImgLoading || createCertificateLoading}
+                disabled={placeOrderLoading || saveDraftLoading}
                 onClick={handleCancelSubmit}
                 variant="contained"
                 className="bg-[#A21313] rounded-[7px] font-kodchasan px-4"

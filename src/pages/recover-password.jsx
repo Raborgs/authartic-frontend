@@ -17,6 +17,8 @@ import {
   useVerificationAccountMutation,
   useUpdatePasswordMutation,
 } from "../slices/userApiSlice";
+import Header from "@/components/header";
+import HomeIcon from "@mui/icons-material/Home";
 
 const RecoverPassword = () => {
   const [searchEmailRes, setSearchEmailRes] = useState("");
@@ -174,6 +176,12 @@ const RecoverPassword = () => {
 
   return (
     <div className="bg-green-50 h-screen flex flex-col p-4 overflow-scroll scroller-hidden">
+      <Header
+        attributes={{
+          to: "/",
+          menuItems: [{ to: "/", title: "HOME", icon: HomeIcon }],
+        }}
+      />
       <Box className="flex justify-center items-center gap-3">
         <strong
           className={`font-kodchasan font-semibold text-lg flex items-center justify-center cursor-pointer rounded-full w-[30px] h-[30px] ${
@@ -260,20 +268,24 @@ const RecoverPassword = () => {
                 {isError && (
                   <Typography color="error">{searchEmailRes}</Typography>
                 )}
-                {suggestions.length > 0 && (
+                {suggestions.length > 0 ? (
                   <div>
                     <Typography variant="subtitle1">
                       Suggested emails:
                     </Typography>
                     {suggestions.map((suggestion, index) => (
-                      <div key={index}>
+                      <div key={index} className="flex items-center gap-2">
                         <input
                           type="radio"
                           name="email"
+                          id="email"
                           value={suggestion}
                           onChange={() => handleRadioChange(suggestion)}
+                          className="m-0"
                         />
-                        <label>{suggestion}</label>
+                        <label className="m-0 font-KoHo" htmlFor="email">
+                          {suggestion}
+                        </label>
                       </div>
                     ))}
                     {selectedEmail && (
@@ -292,6 +304,11 @@ const RecoverPassword = () => {
                       </Button>
                     )}
                   </div>
+                ) : (
+                  <Typography variant="p" className="text-center text-sm mb-4">
+                    Please write a valid email and press search to find your
+                    account
+                  </Typography>
                 )}
               </div>
             </form>

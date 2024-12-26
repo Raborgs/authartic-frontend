@@ -22,6 +22,8 @@ import { useRouter } from "next/router";
 import { useGetProfileQuery } from "@/slices/userApiSlice";
 import { useGetAllFontsQuery } from "@/slices/fontApiSlice";
 import WithAuth from "@/components/withAuth";
+import LogoutIcon from "@mui/icons-material/Logout";
+import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
 
 const initialData = {
   name: "",
@@ -42,6 +44,10 @@ function ProPlanVendor() {
   const uploadCustomBgRef = useRef(null);
   const [allFonts, setAllFonts] = useState([]);
   const [isDataLoaded, setIsDataLoaded] = useState(false); // Track if data is loaded
+  const [isBgColorOrBgImg, setIsBgColorOrBgImg] = useState({
+    isBgColorChecked: true,
+    isBgImgChecked: false,
+  });
 
   const { data: currentUser, refetch: currentUserRefetch } =
     useGetProfileQuery();
@@ -73,6 +79,9 @@ function ProPlanVendor() {
     productImage: null,
     customBgImage: null,
   });
+
+  const [placeOrderLoading, setPlaceOrderLoading] = useState(false);
+  const [saveDraftLoading, setSaveDraftLoading] = useState(false);
 
   const handleProductImageInputClick = () => {
     uploadProductImageRef.current.click();
@@ -127,8 +136,37 @@ function ProPlanVendor() {
       toast.info("You must accept acknowledge to continue");
     } else {
       try {
+        // Set the appropriate loading state
+        if (toggleDraft) {
+          setSaveDraftLoading(true);
+        } else {
+          setPlaceOrderLoading(true);
+        }
+
         // Upload Product Image
-        if (imageFiles.productImage && imageFiles.customBgImage) {
+        if (imageFiles.productImage) {
+          let productImageId = null;
+          let customBgId = null;
+
+          if (isBgColorOrBgImg?.isBgImgChecked && !imageFiles.customBgImage) {
+            toast.error("Custom background image not provided.");
+            return;
+          } else if (
+            isBgColorOrBgImg?.isBgImgChecked &&
+            imageFiles.customBgImage
+          ) {
+            // Upload Custom Background Image
+            const customBgFormData = new FormData();
+            customBgFormData.append("file", imageFiles.customBgImage);
+            customBgFormData.append("type", "text/photo");
+            const customBgResponse = await uploadCustomImage(
+              customBgFormData
+            ).unwrap();
+
+            // Extract the custom background image ID from the response
+            customBgId = customBgResponse?.data?.id;
+          }
+
           const productImageFormData = new FormData();
           productImageFormData.append("file", imageFiles.productImage);
           productImageFormData.append("type", "text/photo");
@@ -137,32 +175,36 @@ function ProPlanVendor() {
           ).unwrap();
 
           // Extract the product image ID from the response
-          const productImageId = productImageResponse?.data?.id;
-
-          // Upload Custom Background Image
-          const customBgFormData = new FormData();
-          customBgFormData.append("file", imageFiles.customBgImage);
-          customBgFormData.append("type", "text/photo");
-          const customBgResponse = await uploadCustomImage(
-            customBgFormData
-          ).unwrap();
-
-          // Extract the custom background image ID from the response
-          const customBgId = customBgResponse?.data?.id;
+          productImageId = productImageResponse?.data?.id;
 
           // Create the Certificate
-          const certificateData = {
+          let certificateData = {
             name: formData.name,
             description: formData.description,
             number_of_certificate: parseInt(formData.number_of_certificate),
             font: formData.font,
             font_color: formData.font_color,
-            bg_color: formData.bg_color,
+            // bg_color: formData.bg_color,
             saved_draft: toggleDraft, // Adjust based on your requirement
             product_sell: formData.product_sell,
             product_image_id: productImageId,
             custom_bg: customBgId,
           };
+
+          if (isBgColorOrBgImg?.isBgColorChecked) {
+            certificateData = {
+              name: formData.name,
+              description: formData.description,
+              number_of_certificate: parseInt(formData.number_of_certificate),
+              font: formData.font,
+              font_color: formData.font_color,
+              bg_color: formData.bg_color,
+              saved_draft: toggleDraft, // Adjust based on your requirement
+              product_sell: formData.product_sell,
+              product_image_id: productImageId,
+              //  custom_bg: customBgId,
+            };
+          }
 
           const certificateResponse = await createCertificate(
             certificateData
@@ -184,12 +226,10 @@ function ProPlanVendor() {
               certificateResponse?.data?.message ||
               "Certificate created successfully!"
           );
-          router.push("/home-after-login");
+          router.push("/home");
         } else {
           toast.error(
-            (!imageFiles.productImage && "Product image not provided.") ||
-              (!imageFiles.customBgImage &&
-                "Custom background image not provided.")
+            !imageFiles.productImage && "Product image not provided."
           );
         }
       } catch (error) {
@@ -198,6 +238,10 @@ function ProPlanVendor() {
             error?.data?.message ||
             "Failed to create certificate. Please try again."
         );
+      } finally {
+        // Reset both loading states
+        setPlaceOrderLoading(false);
+        setSaveDraftLoading(false);
       }
     }
   };
@@ -213,7 +257,7 @@ function ProPlanVendor() {
       return { ...prev, productImagePreview: null, customImagePreview: null };
     });
     toast.success("Certificate Cleared!");
-    router.push("/home-after-login");
+    router.push("/home");
   };
 
   // Warning Tip When Both Background Color and Font Color are same....
@@ -245,7 +289,19 @@ function ProPlanVendor() {
 
   return (
     <>
-      <Header />
+      <Header
+        attributes={{
+          to: "/home",
+          menuItems: [
+            { to: "/", title: "LOGOUT", icon: LogoutIcon, logout: true },
+            {
+              to: "/account-settings",
+              title: "Account Settings",
+              icon: ManageAccountsIcon,
+            },
+          ],
+        }}
+      />
       <Box className="min-h-screen">
         <Box className="max-w-[602px] w-full mx-auto bg-[#22477F] py-6 my-6 rounded-[30px] px-[20px]">
           {/* NAME AND DESCRIPTION FIELDS */}
@@ -310,10 +366,10 @@ function ProPlanVendor() {
             />
           </Box>
 
-          <Box className="flex flex-col md:flex-row md:justify-around items-center mb-6">
+          <Box className="flex flex-col sm:flex-row sm:justify-between items-center mb-8 max-w-[518px] w-full mx-auto">
             {/* HANDLE PRODUCT IMAGE UPLOAD */}
-            <Box className="md:bg-[#ADA8A8] bg-transparent rounded-br-[20px] rounded-bl-[20px] p-8 max-w-[280px] w-full mb-4 md:mb-0">
-              <Button className="flex text-black bg-[#fff] rounded-[41.47px] px-4 py-4 gap-2">
+            <Box className="sm:bg-[#ADA8A8] bg-transparent rounded-br-[20px] rounded-bl-[20px] p-8 max-w-[280px] w-full mb-4 md:mb-0">
+              <div className="flex items-center text-black bg-[#fff] rounded-[41.47px] px-4 py-4 gap-2">
                 {productImagePreview.productImagePreview ? (
                   <Avatar
                     alt="Remy Sharp"
@@ -331,7 +387,7 @@ function ProPlanVendor() {
                   ref={uploadProductImageRef}
                   onChange={handleProductImageChange}
                 />
-              </Button>
+              </div>
               <Button
                 className=" bg-[#3276E8] text-white rounded-[41.47px] w-full px-4 py-2 mt-3"
                 onClick={handleProductImageInputClick}
@@ -342,7 +398,7 @@ function ProPlanVendor() {
 
             {/* HANDLE NUMBER OF CERTIFICATES */}
             <Box className="flex justify-center w-full md:w-auto">
-              <fieldset className="max-w-[193px] h-[80px] bg-white rounded-[10px] border-2 border-[#606060] px-2 flex flex-col">
+              <fieldset className="w-full sm:max-w-[193px] h-[80px] bg-white rounded-[10px] border-2 border-[#606060] px-2 flex flex-col">
                 <legend className="bg-white text-sm text-black px-[3px] pb-[3pxpx] tracking-tighter">
                   Number of Certificates
                 </legend>
@@ -408,6 +464,11 @@ function ProPlanVendor() {
               ></span>
 
               <div
+                onMouseLeave={() =>
+                  setToggleColorPicker((prev) => {
+                    return { ...prev, isOpenFontColorpicker: false };
+                  })
+                }
                 className={`absolute left-0 top-0 z-10 flex flex-col bg-slate-300 gap-3 py-1 px-3 rounded-lg transition-all ${
                   toggleColorPicker.isOpenFontColorpicker
                     ? "block opacity-1 scale-1"
@@ -458,17 +519,29 @@ function ProPlanVendor() {
               <Box className="flex flex-col justify-center items-center relative">
                 <Box className="flex items-center justify-around">
                   <Radio
+                    checked={isBgColorOrBgImg.isBgColorChecked}
+                    onChange={(e) => {
+                      setIsBgColorOrBgImg((prev) => {
+                        return {
+                          ...prev,
+                          isBgColorChecked: e.target.checked,
+                          isBgImgChecked: false,
+                        };
+                      });
+                    }}
+                    name="bgcolor"
+                    id="bgcolor"
                     sx={{
                       color: "#fff",
                     }}
                   />
                   <Typography className="text-[#fff]">
-                    Background Color
+                    <label htmlFor="bgcolor">Background Color</label>
                   </Typography>
                 </Box>
                 <span
                   style={{ backgroundColor: formData.bg_color }}
-                  className="w-[47px] h-[41px] rounded-sm inline-block relative cursor-pointer"
+                  className="w-[90px] h-[80px] rounded-[12px] inline-block relative cursor-pointer"
                   onClick={() => {
                     setToggleColorPicker((prev) => {
                       return {
@@ -480,6 +553,11 @@ function ProPlanVendor() {
                 ></span>
 
                 <div
+                  onMouseLeave={() =>
+                    setToggleColorPicker((prev) => {
+                      return { ...prev, isOpenBgColorPicker: false };
+                    })
+                  }
                   className={`absolute left-0 top-0 z-10 flex flex-col bg-slate-300 gap-3 py-1 px-3 rounded-lg transition-all ${
                     toggleColorPicker.isOpenBgColorPicker
                       ? "block opacity-1 scale-1"
@@ -532,17 +610,29 @@ function ProPlanVendor() {
               <Box className="flex flex-col justify-center items-center border-xl">
                 <Box className="flex items-center">
                   <Radio
+                    checked={isBgColorOrBgImg.isBgImgChecked}
+                    onChange={(e) => {
+                      setIsBgColorOrBgImg((prev) => {
+                        return {
+                          ...prev,
+                          isBgImgChecked: e.target.checked,
+                          isBgColorChecked: false,
+                        };
+                      });
+                    }}
+                    name="bgimg"
+                    id="bgimg"
                     sx={{
                       color: "#fff",
                     }}
                   />
                   <Typography className="text-[#fff]">
-                    Custom Background
+                    <label htmlFor="bgimg">Custom Background</label>
                   </Typography>
                 </Box>
                 <Box className="flex justify-around items-center">
                   <Box
-                    className="flex flex-col justify-center items-center text-black bg-[#fff] rounded-[12px] ml-5"
+                    className="flex flex-col justify-center items-center text-black bg-[#fff] rounded-[12px] ml-5 w-[90px] h-[80px]"
                     onClick={handleCustomImageInputClick}
                   >
                     {productImagePreview.customImagePreview ? (
@@ -555,7 +645,7 @@ function ProPlanVendor() {
                     ) : (
                       <>
                         <Image src={Icon} alt="Icon" width={30} height={30} />
-                        <Typography className="font-DMSans">
+                        <Typography className="font-DMSans text-center">
                           Click to upload
                         </Typography>
                       </>
@@ -648,48 +738,34 @@ function ProPlanVendor() {
             <Box display="flex" flexDirection="column" alignItems="end" gap={2}>
               <Button
                 disabled={
-                  !acceptCertificate ||
-                  uploadProductImageLoading ||
-                  uploadCustomImageLoading ||
-                  createCertificateLoading
+                  !acceptCertificate || placeOrderLoading || saveDraftLoading
                 }
                 variant="contained"
                 onClick={() => handleSubmit(false)}
                 className="bg-[#27A213] rounded-[7px] font-kodchasan px-4"
               >
-                {uploadProductImageLoading ||
-                uploadCustomImageLoading ||
-                createCertificateLoading ? (
-                  <CircularProgress size="30px" />
+                {placeOrderLoading ? (
+                  <CircularProgress size="24px" />
                 ) : (
                   "Place Order"
                 )}
               </Button>
               <Button
                 disabled={
-                  !acceptCertificate ||
-                  uploadProductImageLoading ||
-                  uploadCustomImageLoading ||
-                  createCertificateLoading
+                  !acceptCertificate || placeOrderLoading || saveDraftLoading
                 }
                 onClick={() => handleSubmit(true)}
                 variant="contained"
                 className="bg-[#81ACF3] rounded-[7px] font-kodchasan px-4"
               >
-                {uploadProductImageLoading ||
-                uploadCustomImageLoading ||
-                createCertificateLoading ? (
-                  <CircularProgress size="30px" />
+                {saveDraftLoading ? (
+                  <CircularProgress size="24px" />
                 ) : (
                   "Save Draft"
                 )}
               </Button>
               <Button
-                disabled={
-                  uploadProductImageLoading ||
-                  uploadCustomImageLoading ||
-                  createCertificateLoading
-                }
+                disabled={placeOrderLoading || saveDraftLoading}
                 onClick={handleCancelSubmit}
                 variant="contained"
                 className="bg-[#A21313] rounded-[7px] font-kodchasan px-4"

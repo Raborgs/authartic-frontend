@@ -11,9 +11,16 @@ import CheckIcon from "@mui/icons-material/Check";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import CircularProgress from "@mui/material/CircularProgress"; // Import the CircularProgress spinner
+import { useDispatch, useSelector } from "react-redux";
+import { setCredentials } from "@/slices/authSlice";
 
 export default function PackageCard({ data }) {
   const router = useRouter();
+  const dispatch = useDispatch();
+  const access_token = useSelector(
+    (state) => state.auth.userInfo?.access_token
+  );
+
   const [
     activateSubscriptionPlan,
     { isLoading: isActivationLoading, error: isActivationError },
@@ -26,10 +33,12 @@ export default function PackageCard({ data }) {
     try {
       let res = await activateSubscriptionPlan(id).unwrap();
       if (res) {
+        dispatch(setCredentials({ access_token, user: res }));
         toast.success("Subscribed Plan Successfully");
-        router.push("/home-after-login");
+        router.push("/home");
       }
     } catch (err) {
+      console.error(err);
       if (err?.data) {
         toast.error(err.data.message || "An unknown error occurred");
       } else {

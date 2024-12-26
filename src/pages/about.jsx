@@ -2,8 +2,43 @@ import Footer from "@/components/footer";
 import Header from "@/components/header";
 import Head from "next/head";
 import React from "react";
+import HomeIcon from "@mui/icons-material/Home";
+import LogoutIcon from "@mui/icons-material/Logout";
+import { useSelector } from "react-redux";
 
 const About = () => {
+  const isUserHaveCodeFromAdmin = useSelector(
+    (state) => state.auth.userInfo?.user
+  );
+
+  let userRedirection =
+    isUserHaveCodeFromAdmin?.validation_code?.code &&
+    isUserHaveCodeFromAdmin?.subscriptionStatus;
+  let attributes = {};
+
+  if (isUserHaveCodeFromAdmin?.role === "ADMIN") {
+    attributes = {
+      to: "/admin-dashboard",
+      menuItems: [
+        { to: "/admin-dashboard", title: "HOME", icon: HomeIcon },
+        { to: "/", title: "LOGOUT", icon: LogoutIcon, logout: true },
+      ],
+    };
+  } else if (userRedirection) {
+    attributes = {
+      to: "/home",
+      menuItems: [
+        { to: "/home", title: "HOME", icon: HomeIcon },
+        { to: "/", title: "LOGOUT", icon: LogoutIcon, logout: true },
+      ],
+    };
+  } else {
+    attributes = {
+      to: "/",
+      menuItems: [{ to: "/", title: "HOME", icon: HomeIcon }],
+    };
+  }
+
   return (
     <>
       <Head>
@@ -11,7 +46,7 @@ const About = () => {
       </Head>
 
       <div className="w-full min-h-screen flex flex-col justify-between">
-        <Header />
+        <Header attributes={attributes} />
         <div className="max-w-[1223px] h-full mx-auto font-kodchasan text-[18px] md:text-[24px] font-light px-5 sm:px-9 md:px-12 py-7 my-11">
           <h4>Welcome to Oizter!</h4>
           <p>
@@ -55,10 +90,10 @@ const About = () => {
             originality and the hard work that goes into each unique piece.
             Having a centralized system for certificates of authenticity
             guarantees that the products you purchase are authentic, preserving
-            the integrity of our artists&apos; work and discouraging counterfeiters.
-            If you buy a second hand product that you believe comes from one of
-            our partnered vendors, always ask for the Oizter certificate to make
-            sure that it is original!
+            the integrity of our artists&apos; work and discouraging
+            counterfeiters. If you buy a second hand product that you believe
+            comes from one of our partnered vendors, always ask for the Oizter
+            certificate to make sure that it is original!
           </p>
           <p>
             3. Encourage Value-Driven Purchases: In a world dominated by fast

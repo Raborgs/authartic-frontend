@@ -21,6 +21,8 @@ import Footer from "@/components/footer";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import WithAuth from "@/components/withAuth";
+import LogoutIcon from "@mui/icons-material/Logout";
+import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
 
 const initialData = {
   name: "",
@@ -42,6 +44,8 @@ function Index() {
   const [imageFiles, setImageFiles] = useState(null);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState(initialData);
+  const [placeOrderLoading, setPlaceOrderLoading] = useState(false);
+  const [saveDraftLoading, setSaveDraftLoading] = useState(false);
 
   const { data: currentUser, refetch: currentUserRefetch } =
     useGetProfileQuery();
@@ -80,6 +84,13 @@ function Index() {
       toast.info("You must accept acknowledge to continue");
     } else {
       try {
+        // Set the appropriate loading state
+        if (toggleDraft) {
+          setSaveDraftLoading(true);
+        } else {
+          setPlaceOrderLoading(true);
+        }
+
         // Upload Product Image
         if (imageFiles) {
           const productImageFormData = new FormData();
@@ -119,7 +130,7 @@ function Index() {
               certificateResponse?.data?.message ||
               "Certificate created successfully!"
           );
-          router.push("/home-after-login");
+          router.push("/home");
         } else {
           toast.error("Product image not provided.");
         }
@@ -129,6 +140,10 @@ function Index() {
             error?.data?.message ||
             "Failed to create certificate. Please try again."
         );
+      } finally {
+        // Reset both loading states
+        setPlaceOrderLoading(false);
+        setSaveDraftLoading(false);
       }
     }
   };
@@ -139,7 +154,7 @@ function Index() {
     setAcceptCertificate(false);
     setProductImagePreview(null);
     toast.success("Certificate Cleared!");
-    router.push("/home-after-login");
+    router.push("/home");
   };
 
   // Warning Tip When Both Background Color and Font Color are same....
@@ -166,7 +181,19 @@ function Index() {
 
   return (
     <>
-      <Header />
+      <Header
+        attributes={{
+          to: "/home",
+          menuItems: [
+            { to: "/", title: "LOGOUT", icon: LogoutIcon, logout: true },
+            {
+              to: "/account-settings",
+              title: "Account Settings",
+              icon: ManageAccountsIcon,
+            },
+          ],
+        }}
+      />
       <Box className="min-h-screen">
         <Box className="max-w-[602px] w-full mx-auto bg-[#22477F] py-6 my-6 rounded-[30px] px-[20px]">
           {/* NAME AND DESCRIPTION FIELDS */}
@@ -230,10 +257,10 @@ function Index() {
               }}
             />
           </Box>
-          <Box className="flex flex-col md:flex-row md:justify-around items-center mb-6">
+          <Box className="flex flex-col sm:flex-row sm:justify-between items-center mb-6  max-w-[518px] w-full mx-auto">
             {/* HANDLE PRODUCT IMAGE UPLOAD */}
-            <Box className="md:bg-[#ADA8A8] bg-transparent rounded-br-[20px] rounded-bl-[20px] p-8 max-w-[280px] w-full mb-4 mr-5 md:mb-0">
-              <Button className="flex text-black bg-[#fff] rounded-[41.47px] px-4 py-4 gap-2">
+            <Box className="sm:bg-[#ADA8A8] bg-transparent rounded-br-[20px] rounded-bl-[20px] p-8 max-w-[280px] w-full mb-4 mr-5 md:mb-0">
+              <div className="flex items-center text-black bg-[#fff] rounded-[41.47px] px-4 py-4 gap-2">
                 {productImagePreview ? (
                   <Avatar
                     alt="Remy Sharp"
@@ -251,7 +278,7 @@ function Index() {
                   ref={uploadProductImageRef}
                   onChange={handleProductImageChange}
                 />
-              </Button>
+              </div>
               <Button
                 className=" bg-[#3276E8] text-white rounded-[41.47px] w-full px-4 py-2 mt-3"
                 onClick={handleProductImageInputClick}
@@ -262,7 +289,7 @@ function Index() {
 
             {/* HANDLE NUMBER OF CERTIFICATES */}
             <Box className="flex justify-center w-full md:w-auto">
-              <fieldset className="max-w-[193px] h-[70px] bg-white rounded-[10px] border-2 border-[#606060] px-2 flex flex-col">
+              <fieldset className="w-full sm:max-w-[193px] h-[70px] bg-white rounded-[10px] border-2 border-[#606060] px-2 flex flex-col">
                 <legend className="bg-white text-sm text-black px-[3px] pb-[3px] tracking-tighter">
                   Number of Certificates
                 </legend>
@@ -470,7 +497,7 @@ function Index() {
                 onClick={() => handleSubmit(false)}
                 className="bg-[#27A213] rounded-[7px] font-kodchasan px-4"
               >
-                {uploadImgLoading || createCertificateLoading ? (
+                {placeOrderLoading ? (
                   <CircularProgress size="24px" />
                 ) : (
                   "Place Order"
@@ -486,7 +513,7 @@ function Index() {
                 variant="contained"
                 className="bg-[#81ACF3] rounded-[7px] font-kodchasan px-4"
               >
-                {uploadImgLoading || createCertificateLoading ? (
+                {saveDraftLoading ? (
                   <CircularProgress size="24px" />
                 ) : (
                   "Save Draft"

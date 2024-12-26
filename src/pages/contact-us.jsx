@@ -9,17 +9,22 @@ import Button from "@mui/material/Button";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { useContactUsMutation } from "@/slices/contactUsApislice";
-import { toast } from "react-toastify"; 
+import { toast } from "react-toastify";
+import HomeIcon from "@mui/icons-material/Home";
+import LogoutIcon from "@mui/icons-material/Logout";
+import { useSelector } from "react-redux";
 
 const Form = () => {
+  const [contactUs] = useContactUsMutation();
+  const isUserHaveCodeFromAdmin = useSelector(
+    (state) => state.auth.userInfo?.user
+  );
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     select: "",
     message: "",
   });
-
-  const [contactUs] = useContactUsMutation(); 
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -35,14 +40,13 @@ const Form = () => {
     const dataToSend = {
       name: formData.name,
       email: formData.email,
-      subject: formData.select, 
+      subject: formData.select,
       message: formData.message,
     };
 
     try {
-      
-      await contactUs(dataToSend).unwrap(); 
-      toast.success("Message sent successfully!"); 
+      await contactUs(dataToSend).unwrap();
+      toast.success("Message sent successfully!");
 
       // Clear form data
       setFormData({
@@ -59,9 +63,37 @@ const Form = () => {
     }
   };
 
+  let userRedirection =
+    isUserHaveCodeFromAdmin?.validation_code?.code &&
+    isUserHaveCodeFromAdmin?.subscriptionStatus;
+  let attributes = {};
+
+  if (isUserHaveCodeFromAdmin?.role === "ADMIN") {
+    attributes = {
+      to: "/admin-dashboard",
+      menuItems: [
+        { to: "/admin-dashboard", title: "HOME", icon: HomeIcon },
+        { to: "/", title: "LOGOUT", icon: LogoutIcon, logout: true },
+      ],
+    };
+  } else if (userRedirection) {
+    attributes = {
+      to: "/home",
+      menuItems: [
+        { to: "/home", title: "HOME", icon: HomeIcon },
+        { to: "/", title: "LOGOUT", icon: LogoutIcon, logout: true },
+      ],
+    };
+  } else {
+    attributes = {
+      to: "/",
+      menuItems: [{ to: "/", title: "HOME", icon: HomeIcon }],
+    };
+  }
+
   return (
     <div className="min-h-screen w-full flex flex-col justify-between items-center">
-      <Header />
+      <Header attributes={attributes} />
 
       <div className="md:w-full md:max-w-[565px] h-full flex items-center justify-center my-5 md:my-11">
         <form

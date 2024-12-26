@@ -25,6 +25,7 @@ import {
   useFindEmailMutation,
   useRegisterMutation,
 } from "@/slices/userApiSlice";
+import HomeIcon from "@mui/icons-material/Home";
 
 const CodeRegistration = () => {
   const router = useRouter();
@@ -257,7 +258,12 @@ const CodeRegistration = () => {
 
   return (
     <div className="flex flex-col justify-between min-h-screen">
-      <Header />
+      <Header
+        attributes={{
+          to: "/",
+          menuItems: [{ to: "/", title: "HOME", icon: HomeIcon }],
+        }}
+      />
       <Box className="min-h-screen p-4">
         <Box className="max-w-[1091px] w-full mx-auto">
           <Box className="flex justify-center items-center flex-wrap gap-5 mb-6">
@@ -271,7 +277,7 @@ const CodeRegistration = () => {
               sx={textFieldStyles}
             />
             <Box className="flex items-center flex-wrap gap-4 justify-center">
-              <Button className="flex text-black bg-[#fff] rounded-[41.47px] px-4 py-2 gap-2">
+              <div className="flex items-center text-black bg-[#fff] rounded-[41.47px] px-4 py-2 gap-2">
                 {productImagePreview.productImagePreview ? (
                   <Avatar
                     alt="Product Image"
@@ -288,7 +294,7 @@ const CodeRegistration = () => {
                   ref={uploadProductImageRef}
                   onChange={handleProductImageChange}
                 />
-              </Button>
+              </div>
               <Button
                 className="bg-[#3276E8] text-white rounded-[41.47px] w-full sm:w-auto px-4 py-2 mt-3 hover:bg-[#3276E8]"
                 onClick={handleProductImageInputClick}
@@ -353,10 +359,16 @@ const CodeRegistration = () => {
                 ))}
               </TextField>
 
-              <Box className="flex items-center">
+              <Box
+                className="flex items-center"
+                sx={{ flexDirection: { xs: "column", sm: "row" } }}
+              >
                 <TextField
                   select
-                  sx={textFieldCodeStyles}
+                  sx={{
+                    ...textFieldCodeStyles,
+                    width: { xs: "100%", sm: "30%" },
+                  }}
                   variant="outlined"
                   label="code"
                   name="countryCode"
@@ -365,7 +377,7 @@ const CodeRegistration = () => {
                 >
                   {countries.map((countrycode) => (
                     <MenuItem key={countrycode.id} value={countrycode.code}>
-                      {countrycode.code}: {countrycode.name}
+                      {countrycode.code}
                     </MenuItem>
                   ))}
                 </TextField>
@@ -374,11 +386,17 @@ const CodeRegistration = () => {
                   label="Phone"
                   type="number"
                   variant="outlined"
-                  fullWidth
+                  // fullWidth
                   name="phone"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  sx={textFieldPhoneeStyles}
+                  sx={{
+                    ...textFieldPhoneeStyles,
+                    width: {
+                      xs: "100%",
+                      sm: "70%",
+                    },
+                  }}
                 />
               </Box>
 
@@ -599,7 +617,6 @@ const textFieldStyles = {
 };
 
 const textFieldCodeStyles = {
-  width: "120px",
   Border: "0px",
 
   "& .MuiOutlinedInput-root": {
@@ -631,5 +648,13 @@ const textFieldPhoneeStyles = {
     "&.Mui-focused fieldset": {
       borderColor: "#606060",
     },
+  },
+  "& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button":
+    {
+      WebkitAppearance: "none",
+      margin: 0,
+    },
+  "& input[type=number]": {
+    MozAppearance: "textfield",
   },
 };

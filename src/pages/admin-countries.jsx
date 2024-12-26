@@ -29,6 +29,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { toast } from "react-toastify";
+import LogoutIcon from "@mui/icons-material/Logout";
 
 const options = [
   { name: "Active Countries", isActive: true },
@@ -306,7 +307,14 @@ export default function PaginatedTable() {
   return (
     <div className="w-screen min-h-screen flex flex-col justify-between bg-gray-100">
       <Box sx={{ width: "100%", height: "auto" }}>
-        <Header />
+        <Header
+          attributes={{
+            to: "/admin-dashboard",
+            menuItems: [
+              { to: "/", title: "LOGOUT", icon: LogoutIcon, logout: true },
+            ],
+          }}
+        />
         <div className="w-full md:w-[90%] lg:w-[80%] mx-auto mt-3">
           <Box sx={{ mb: "2rem" }}>
             <Link

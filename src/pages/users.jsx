@@ -5,10 +5,8 @@ import Head from "next/head";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { DataGrid } from "@mui/x-data-grid";
-import { useCountUsersQuery } from "@/slices/adminUsersApiSlice"; // Assuming this fetches users
-
-import { Box, TextField, InputAdornment } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
+import { useCountUsersQuery } from "@/slices/adminUsersApiSlice";
+import LogoutIcon from "@mui/icons-material/Logout";
 
 const columns = [
   { field: "user_name", headerName: "User Name", width: 250 },
@@ -29,9 +27,11 @@ export default function UsersTable() {
   };
 
   // Query to fetch users
-  const { data: totalUsers, isLoading: isTotalUsersLoading, error: totalUsersError } = useCountUsersQuery(alluserQueryParams);
-
-  
+  const {
+    data: totalUsers,
+    isLoading: isTotalUsersLoading,
+    error: totalUsersError,
+  } = useCountUsersQuery(alluserQueryParams);
 
   // Handle search value change
   const handleSearchValue = (event) => {
@@ -56,7 +56,14 @@ export default function UsersTable() {
       </Head>
 
       <div className="w-full min-h-screen flex flex-col justify-between">
-        <Header />
+        <Header
+          attributes={{
+            to: "/admin-dashboard",
+            menuItems: [
+              { to: "/", title: "LOGOUT", icon: LogoutIcon, logout: true },
+            ],
+          }}
+        />
 
         <div className="w-screen lg:w-[1010px] h-full mx-auto mb-7 px-2 md:px-7">
           <div className="my-7 text-left w-full">

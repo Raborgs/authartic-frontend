@@ -4,9 +4,11 @@ import React, { useEffect } from "react";
 import { Button } from "@mui/material";
 import sampleIMG from "@/assets/images/sample.svg";
 import Link from "next/link";
-const CertificateCard = ({ data }) => {
-  const issuedDate = new Date(`${data.issued_date}`).toLocaleString();
 
+const CertificateCard = ({ data }) => {
+  const issuedDate = data.issued_date
+    ? new Date(`${data.issued_date}`).toLocaleString()
+    : "Certificate has not been issued yet";
 
   const productImgUrl = data?.product_image?.url;
 
@@ -40,14 +42,16 @@ const CertificateCard = ({ data }) => {
           <Button
             className={`bg-[#22477F] text-white w-[189px] h-[26px] hover:text-black rounded-[7px] font-bold font-kodchasan md:text-[16px] lg:text-[20px] capitalize leading-[26px]`}
           >
-            Issue More
+            {data?.saved_draft ? "Issue" : "Issue More"}
           </Button>
         </Link>
-        <Link href={`/issue-certificate/?saved_draft=${data?.saved_draft}&id=${data?.id}&btn=reissueExisting`}>
+        <Link
+          href={`/issue-certificate/?saved_draft=${data?.saved_draft}&id=${data?.id}&btn=reissueExisting`}
+        >
           <Button
             className={`bg-[#22477F] text-white w-[189px] h-[26px] hover:text-black  rounded-[7px] font-bold font-kodchasan md:text-[16px] lg:text-[20px] capitalize leading-[26px]`}
           >
-            Reissue existing
+            {data?.saved_draft ? "Edit" : "Reissue existing"}
           </Button>
         </Link>
         <Link
@@ -56,7 +60,7 @@ const CertificateCard = ({ data }) => {
           <Button
             className={`bg-[#22477F] text-white w-[189px] h-[26px] hover:text-black rounded-[7px] font-bold font-kodchasan md:text-[16px] lg:text-[20px] capitalize leading-[26px]`}
           >
-            Report issue
+            {data?.saved_draft ? "Report Error" : "Report issue"}
           </Button>
         </Link>
       </div>

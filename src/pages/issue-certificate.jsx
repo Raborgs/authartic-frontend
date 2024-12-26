@@ -20,6 +20,8 @@ import image from "../assets/images/image.png";
 import WithAuth from "@/components/withAuth";
 import { useReportProblemMutation } from "@/slices/reportProblemApiSlice";
 import { useReIssueExistingMutation } from "@/slices/reIssueExistingApiSlice";
+import LogoutIcon from "@mui/icons-material/Logout";
+import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
 
 function IssueMore() {
   const router = useRouter();
@@ -130,14 +132,14 @@ function IssueMore() {
 
   const handleReIssueExistingCancel = () => {
     setReIssueExistingId(0);
-    router.push("/home-after-login");
+    router.push("/home");
   };
 
   const handleCancel = () => {
     setReIssueCertificateNo(0);
     setAcknowledge(false);
     setReportText(""); // Clear the report text field
-    router.push("/home-after-login");
+    router.push("/home");
   };
 
   useEffect(() => {
@@ -146,13 +148,29 @@ function IssueMore() {
     }
   }, [clickedinfo]);
 
-  const lastIssuedDate = new Date(
-    certificateInfo?.issued_date
-  ).toLocaleString();
+  let lastIssuedDate = "";
+
+  if (certificateInfo?.issued_date) {
+    lastIssuedDate = new Date(certificateInfo?.issued_date)?.toLocaleString();
+  } else {
+    lastIssuedDate = "Certificate has not been issued yet";
+  }
 
   return (
     <>
-      <Header />
+      <Header
+        attributes={{
+          to: "/home",
+          menuItems: [
+            { to: "/", title: "LOGOUT", icon: LogoutIcon, logout: true },
+            {
+              to: "/account-settings",
+              title: "Account Settings",
+              icon: ManageAccountsIcon,
+            },
+          ],
+        }}
+      />
       <Box className="min-h-screen">
         <Box className="flex items-center justify-center flex-col sm:flex-row gap-[1vw]">
           <Box>
@@ -188,7 +206,7 @@ function IssueMore() {
               }`}
               onClick={() => setIssueState("issueMore")}
             >
-              Issue More
+              {certificateSavedDraft === "true" ? "Issue" : "Issue More"}
             </Button>
             <Button
               type="submit"
@@ -200,7 +218,7 @@ function IssueMore() {
               }`}
               onClick={() => setIssueState("reissueExisting")}
             >
-              Reissue existing
+              {certificateSavedDraft === "true" ? "Edit" : "Reissue existing"}
             </Button>
             <Button
               type="button"
@@ -210,7 +228,9 @@ function IssueMore() {
               }`}
               onClick={() => setIssueState("reportIssue")}
             >
-              Report Problem
+              {certificateSavedDraft === "true"
+                ? "Report error"
+                : "Report Problem"}
             </Button>
           </Box>
         </Box>

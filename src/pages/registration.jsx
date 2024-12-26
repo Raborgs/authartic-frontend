@@ -5,13 +5,12 @@ import Header from "@/components/header";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useGetValidationCodeByCodeMutation } from "@/slices/validationCodeApiSlice";
-import { WithAuth } from "@/components/withAuth";
 import { toast } from "react-toastify";
+import HomeIcon from "@mui/icons-material/Home";
 
 const Registration = () => {
   const router = useRouter();
   const [validCode, setValidCode] = useState("");
-  const [validText, setValidText] = useState("");
   const [isValidating, setIsValidating] = useState(false);
 
   const [validateCode, { isLoading: isValidateCodeLoading }] =
@@ -23,10 +22,7 @@ const Registration = () => {
 
     try {
       const response = await validateCode(validCode).unwrap();
-
-      // Assuming the response contains an 'id' field
       if (response.id) {
-        // Save the ID in localStorage
         localStorage.setItem("validCodeId", response.id);
         toast.success(
           response?.message ||
@@ -45,7 +41,12 @@ const Registration = () => {
 
   return (
     <Box className="min-h-screen flex flex-col justify-between">
-      <Header />
+      <Header
+        attributes={{
+          to: "/",
+          menuItems: [{ to: "/", title: "HOME", icon: HomeIcon }],
+        }}
+      />
       <Box className="flex flex-col items-center h-full px-4">
         <form
           className="w-full max-w-xs mb-3"

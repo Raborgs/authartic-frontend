@@ -17,12 +17,13 @@ import { useSelector } from "react-redux";
 import { useRouter } from "next/router";
 import { useResendVerificationEmailMutation } from "@/slices/userApiSlice";
 import WithAuth from "@/components/withAuth";
+import LogoutIcon from "@mui/icons-material/Logout";
+import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
 
 const Index = () => {
   const [openModal, setOpenModal] = useState(false);
   const { userInfo } = useSelector((state) => state?.auth);
-  
-  
+
   const router = useRouter();
 
   const {
@@ -35,24 +36,28 @@ const Index = () => {
   const [resendVerificationEmail, { isLoading: resendLoading }] =
     useResendVerificationEmailMutation();
 
-    useEffect(() => {
-      if (userInfo) {
-        const isEmailVerified = userInfo?.user?.is_email_verified;
-        if (!isEmailVerified) {
-          setOpenModal(true);
-        } else {
-          if (openModal) {
-            setOpenModal(false);
-            router.push("/package-plans");
-          }
+  useEffect(() => {
+    if (userInfo) {
+      const isEmailVerified = userInfo?.user?.is_email_verified;
+      if (!isEmailVerified) {
+        setOpenModal(true);
+      } else {
+        if (openModal) {
+          setOpenModal(false);
+          router.push("/package-plans");
         }
       }
-    }, [userInfo, openModal, router]);
+    }
+  }, [userInfo, openModal, router]);
 
   const handleResendVerification = async () => {
     try {
-   const response =    await resendVerificationEmail().unwrap();
-      toast.success(response?.message || response?.data?.message || "Verification email has been sent!");
+      const response = await resendVerificationEmail().unwrap();
+      toast.success(
+        response?.message ||
+          response?.data?.message ||
+          "Verification email has been sent!"
+      );
     } catch (err) {
       if (err.data && err.data.message) {
         toast.error(`Failed to resend verification email: ${err.data.message}`);
@@ -62,21 +67,31 @@ const Index = () => {
     }
   };
 
-  const handleOpenGmail = () => {
-    window.open("https://mail.google.com/", "_blank");
-  };
-
   return (
-    <div className="flex flex-col justify-between min-h-screen"
-    style={{overflow:"scroll", height:"100vh"}}>
-      <Header />
-      <Box >
+    <div
+      className="flex flex-col justify-between min-h-screen"
+      style={{ overflow: "scroll", height: "100vh" }}
+    >
+      <Header
+        attributes={{
+          to: "/",
+          menuItems: [
+            { to: "/", title: "LOGOUT", icon: LogoutIcon, logout: true },
+            {
+              to: "/account-settings",
+              title: "Account Settings",
+              icon: ManageAccountsIcon,
+            },
+          ],
+        }}
+      />
+      <Box>
         {/* Message for unverified email */}
         {!userInfo?.user?.validation_code && (
           <Box className="text-center m-10">
             <Typography variant="body1">
-              You will not be charged until after we validate your account.{" "}
-              <br /> You will receive an email notification.
+              Your account is not yet validated by Authartic. Validation may
+              take up to 24 hours. You will be notified by email.
             </Typography>
           </Box>
         )}
@@ -87,9 +102,9 @@ const Index = () => {
             <DialogTitle>Email Verification Required</DialogTitle>
             <DialogContent>
               <Typography>
-                Your email address <strong>{userInfo?.user?.email}</strong> is
-                not verified yet. Please click the button below to resend the
-                verification email or open your email client.
+                “Your email address <strong>{userInfo?.user?.email}</strong> is
+                not verified yet. Please check your spam folder or click the
+                button below to resend the verification link
               </Typography>
             </DialogContent>
             <DialogActions>

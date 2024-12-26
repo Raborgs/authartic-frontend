@@ -16,9 +16,11 @@ import MenuItem from "@mui/material/MenuItem";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useGetProfileQuery } from "@/slices/userApiSlice";
 import { getUserRoleFromLocalStorage } from "@/utils/get-token";
+import { usePathname } from "next/navigation";
 
-const Header = ({ disableAccountSettings }) => {
+const Header = ({ disableAccountSettings, attributes }) => {
   const router = useRouter();
+  const pathName = usePathname();
   const dispatch = useDispatch();
   const { data: logedInUserDetails } = useGetProfileQuery();
   const token = useSelector((state) => state.auth.userInfo?.access_token);
@@ -44,15 +46,8 @@ const Header = ({ disableAccountSettings }) => {
 
   const handleLogout = async () => {
     try {
-      // Call the API to log out
       const response = await logoutApiCall().unwrap();
-
-      // Dispatch the Redux logout action to clear local storage and update state
       dispatch(logout());
-
-      // Redirect to home page
-
-      // Show success toast
       toast.success(
         response?.message ||
           response?.data?.message ||
@@ -64,7 +59,6 @@ const Header = ({ disableAccountSettings }) => {
         router.push("/");
       }
     } catch (error) {
-      // Show error toast
       toast.error(
         error?.message ||
           error?.data?.message ||
@@ -72,17 +66,26 @@ const Header = ({ disableAccountSettings }) => {
       );
     }
   };
+
   const open = Boolean(anchorEl);
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
+
   const handleClose = () => {
     setAnchorEl(null);
   };
+
   const handleLogoClick = () => {
     const userRole = getUserRoleFromLocalStorage();
-    if (userRole !== "ADMIN") {
-      router.push("/home-after-login");
+    if (attributes?.to) {
+      router.push(attributes?.to);
+    }
+  };
+
+  const handleItemClick = (menuItem) => {
+    if (menuItem?.logout) {
+      handleLogout();
     }
   };
 
@@ -125,73 +128,23 @@ const Header = ({ disableAccountSettings }) => {
             "aria-labelledby": "basic-button",
           }}
         >
-          {!authStatus ? (
-            <Link href="/">
-              <Button
-                variant="h6"
-                color="inherit"
-                className="font-Kodchasan text-[20px] font-semibold cursor-pointer flex items-center gap-1"
-              >
-                <HomeIcon />
-                Home
-              </Button>
-            </Link>
-          ) : (
-            <div className="flex flex-col items-end gap-1">
-              {disableAccountSettings === "Yes" ? (
-                <MenuItem onClick={handleClose}>
-                  <Link href="/">
-                    <Button
-                      variant="h6"
-                      color="inherit"
-                      className="font-Kodchasan text-[20px] font-semibold cursor-pointer p-0 flex items-center gap-1"
-                    >
-                      <HomeIcon />
-                      Home
-                    </Button>
-                  </Link>
-                </MenuItem>
-              ) : (
-                <MenuItem onClick={handleClose}>
+          {attributes?.menuItems?.map((items, index) => {
+            const Icon = items?.icon;
+            return (
+              <MenuItem onClick={() => handleItemClick(items)} key={index}>
+                <Link href={items?.to || ""}>
                   <Button
                     variant="h6"
                     color="inherit"
-                    className="!font-Kodchasan !text-[20px] !font-semibold !cursor-pointer !p-0 !flex !items-center !gap-1"
-                    onClick={handleLogout}
+                    className="font-Kodchasan text-xs md:text-sm font-semibold cursor-pointer p-0 flex items-center gap-1"
                   >
-                    <LogoutIcon />
-                    Logout
+                    <Icon />
+                    {items?.title || ""}
                   </Button>
-                </MenuItem>
-              )}
-
-              {disableAccountSettings === "Yes" ? (
-                <MenuItem onClick={handleClose}>
-                  <Button
-                    variant="h6"
-                    color="inherit"
-                    className="font-Kodchasan text-sm font-medium cursor-pointer p-0 flex items-center gap-1"
-                    onClick={handleLogout}
-                  >
-                    <LogoutIcon />
-                    Logout
-                  </Button>
-                </MenuItem>
-              ) : (
-                logedInUser?.role !== "ADMIN" && (
-                  <MenuItem onClick={handleClose}>
-                    <Link
-                      href="/account-settings"
-                      className="font-Kodchasan text-sm font-medium cursor-pointer p-0 flex items-center gap-1"
-                    >
-                      <ManageAccountsIcon />
-                      <small>Account Settings</small>
-                    </Link>
-                  </MenuItem>
-                )
-              )}
-            </div>
-          )}
+                </Link>
+              </MenuItem>
+            );
+          })}
         </Menu>
       </div>
     </Box>

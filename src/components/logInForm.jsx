@@ -70,7 +70,7 @@ const LoginForm = ({ title, from }) => {
         } else if (res.user.role === "VENDOR") {
           const hasPlan = res.user.subscriptionStatus;
           if (hasPlan) {
-            router.push("/home-after-login");
+            router.push("/home");
           } else {
             router.push("/package-plans");
           }

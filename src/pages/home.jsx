@@ -5,7 +5,9 @@ import SampleCard from "@/components/certificateCards";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { useGetMyCertificateInfoQuery } from "@/slices/certificateInfoApiSlice";
-import WithAuth from '@/components/withAuth';
+import WithAuth from "@/components/withAuth";
+import LogoutIcon from "@mui/icons-material/Logout";
+import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
 
 const Index = () => {
   const [drafttext, setDraftText] = useState("Drafts");
@@ -15,15 +17,13 @@ const Index = () => {
     limit: 10,
     saved_draft: false,
   });
-  
+
   const {
     data: allCertificateData,
     error,
     isLoading,
     refetch,
   } = useGetMyCertificateInfoQuery(params);
-  
-
 
   // Update certificates and handle errors
   useEffect(() => {
@@ -32,8 +32,8 @@ const Index = () => {
     } else if (error) {
       setCertificateData([]); // Handle error state
     }
-    refetch()
-  }, [allCertificateData, error]);
+    refetch();
+  }, [allCertificateData, error, refetch]);
 
   // Handle draft button click
   const handleDraftCertificates = () => {
@@ -59,7 +59,19 @@ const Index = () => {
     <>
       <Box className="min-h-screen flex flex-col justify-between">
         <Box className="w-full">
-          <Header />
+          <Header
+            attributes={{
+              to: "/home",
+              menuItems: [
+                { to: "/", title: "LOGOUT", icon: LogoutIcon, logout: true },
+                {
+                  to: "/account-settings",
+                  title: "Account Settings",
+                  icon: ManageAccountsIcon,
+                },
+              ],
+            }}
+          />
           <Box className="w-full max-w-[962px] relative mx-auto mt-1">
             <Box className="flex flex-col items-center w-full">
               <Box className="flex flex-col items-end gap-1">
@@ -78,10 +90,10 @@ const Index = () => {
                   Loading...
                 </Typography>
               )}
-              {!error && certificateData?.data?.map((data, index) => (
-               
-                <SampleCard data={data} key={index} />
-              ))}
+              {!error &&
+                certificateData?.data?.map((data, index) => (
+                  <SampleCard data={data} key={index} />
+                ))}
               {error && (
                 <Typography className="font-bold text-xl">
                   {error?.data?.message || "An error occurred"}
@@ -101,4 +113,4 @@ const Index = () => {
   );
 };
 
-export default WithAuth(Index, ['VENDOR']);
+export default WithAuth(Index, ["VENDOR"]);
