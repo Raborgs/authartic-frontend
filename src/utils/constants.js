@@ -5,8 +5,8 @@
 
 // Define base URL using the environment variable or fallback
 // export const BASE_URL = "http://localhost:8000/api/v1";
-export const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000/api/v1";
-
+// export const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000/api/v1";
+export const BASE_URL = "https://api.authartic.com/api/v1/";
 // Define other API endpoints
 export const AUTH_URL = "/auth";
 export const USER_URL = "/user";

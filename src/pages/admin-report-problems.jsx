@@ -26,7 +26,7 @@ import {
   useAdminResponseReportMutation,
 } from "@/slices/reportProblemApiSlice";
 import LogoutIcon from "@mui/icons-material/Logout";
-
+import { toast } from "react-toastify";
 export default function PaginatedTable() {
   const [searchQuery, setSearchQuery] = useState("");
   const [rows, setRows] = useState([]);
@@ -288,10 +288,10 @@ export default function PaginatedTable() {
               label="Status"
               onChange={handleStatusChange} // Update state and clear text if needed
             >
-              <MenuItem value={1}>1</MenuItem>
-              <MenuItem value={2}>2</MenuItem>
-              <MenuItem value={3}>3</MenuItem>
-              <MenuItem value={4}>4</MenuItem>
+              <MenuItem value={1}>Open</MenuItem>
+              <MenuItem value={2}>In Progress</MenuItem>
+              <MenuItem value={3}>Resolved</MenuItem>
+              <MenuItem value={4}>Closed</MenuItem>
             </Select>
           </FormControl>
           <TextField

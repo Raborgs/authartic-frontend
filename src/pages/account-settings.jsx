@@ -96,9 +96,9 @@ const AccountSettings = () => {
     setFormData((prev) => ({ ...prev, country: Number(selectedCountry) }));
   };
 
-  const handleLogout = async () => {
+  const handleLogout = async (newToken) => {
     try {
-      const response = await logoutApiCall().unwrap();
+      const response = await logoutApiCall({ newToken: null }).unwrap();
       dispatch(logout());
       toast.success(
         response?.message ||
@@ -186,8 +186,9 @@ const AccountSettings = () => {
         }
 
         const res = await updateUser(dataToSubmit).unwrap();
+        console.log("UPDATED", res);
         toast.success(res?.message || res?.data?.message || "User Updated.");
-        userProfileRefetch();
+        // userProfileRefetch();
         handleLogout();
       }
     } catch (error) {

@@ -26,8 +26,14 @@ import {
   useRegisterMutation,
 } from "@/slices/userApiSlice";
 import HomeIcon from "@mui/icons-material/Home";
+import isoCountries from "i18n-iso-countries";
+import en from "i18n-iso-countries/langs/en.json";
 
 const CodeRegistration = () => {
+  useEffect(() => {
+    isoCountries?.registerLocale(en);
+  }, []);
+
   const router = useRouter();
   const [uploadResult, setUploadResult] = useState(null);
   const [errors, setErrors] = useState({});
@@ -190,10 +196,6 @@ const CodeRegistration = () => {
         condition: !isValidPassword(password),
         message:
           "Password must be at least 8 characters long and must be less then 20 characters and include upper/lowercase letters, numbers, and special characters.",
-      },
-      {
-        condition: !website,
-        message: "Website URL must be a valid URL.",
       },
       {
         condition: await checkIsEmailAlreadyTaken(email),
@@ -361,13 +363,15 @@ const CodeRegistration = () => {
 
               <Box
                 className="flex items-center"
-                sx={{ flexDirection: { xs: "column", sm: "row" } }}
+                sx={{ flexDirection: { xs: "row" } }}
               >
                 <TextField
                   select
                   sx={{
                     ...textFieldCodeStyles,
-                    width: { xs: "100%", sm: "30%" },
+                    borderRight:"0px",  
+                    outline:"0px",
+                    width: { xs: "45%", md: "30%" },
                   }}
                   variant="outlined"
                   label="code"
@@ -377,7 +381,18 @@ const CodeRegistration = () => {
                 >
                   {countries.map((countrycode) => (
                     <MenuItem key={countrycode.id} value={countrycode.code}>
-                      {countrycode.code}
+                      <div className="flex items-center gap-3">
+                        <Image
+                          className="h-[20px] w-auto"
+                          width={50}
+                          height={45}
+                          src={`https://flagcdn.com/w320/${isoCountries
+                            .getAlpha2Code(countrycode?.name, "en")
+                            ?.toLowerCase()}.png`}
+                        />
+                        <p>{countrycode.code}</p>
+                        {/* <p>{countrycode.name}</p> */}
+                      </div>
                     </MenuItem>
                   ))}
                 </TextField>
@@ -385,16 +400,16 @@ const CodeRegistration = () => {
                 <TextField
                   label="Phone"
                   type="number"
-                  variant="outlined"
                   // fullWidth
                   name="phone"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   sx={{
                     ...textFieldPhoneeStyles,
+                    borderLeft: "0px",
                     width: {
-                      xs: "100%",
-                      sm: "70%",
+                      xs: "55%",
+                      md: "70%",
                     },
                   }}
                 />

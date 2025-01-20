@@ -12,7 +12,6 @@ import { useRouter } from "next/router";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import {
-  useFindEmailMutation,
   useSendOtpEmailMutation,
   useVerificationAccountMutation,
   useUpdatePasswordMutation,
@@ -21,22 +20,13 @@ import Header from "@/components/header";
 import HomeIcon from "@mui/icons-material/Home";
 
 const RecoverPassword = () => {
-  const [searchEmailRes, setSearchEmailRes] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState("VENDOR");
-  const [findEmail, { data: suggestions = [], isLoading, isError, error }] =
-    useFindEmailMutation();
-  const [sendOtpEmail, { isLoading: isOtpLoading, isError: isOtpError }] =
-    useSendOtpEmailMutation();
-  const [
-    verifyAccount,
-    { isLoading: isVerifyLoading, isError: isVerifyError },
-  ] = useVerificationAccountMutation();
-  const [
-    updatePassword,
-    { isLoading: isUpdateLoading, isError: isUpdateError },
-  ] = useUpdatePasswordMutation();
+  const role = "VENDOR";
+  const [sendOtpEmail, { isLoading: isOtpLoading }] = useSendOtpEmailMutation();
+  const [verifyAccount, { isLoading: isVerifyLoading }] =
+    useVerificationAccountMutation();
+  const [updatePassword] = useUpdatePasswordMutation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [isOtpVerified, setIsOtpVerified] = useState(false);
@@ -47,39 +37,11 @@ const RecoverPassword = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
 
-  const handleEmailSearch = async () => {
-    try {
-      if (email.length > 2) {
-        const response = await findEmail({ email, role });
-        if (response && response.statusCode === 404) {
-          toast.error("No matching emails found.");
-        } else if (response.error) {
-          toast.error(
-            response?.error?.data?.message ||
-              response?.message ||
-              "Enter valid email."
-          );
-        }
-      } else {
-        toast.error("Please enter a valid email address.");
-      }
-    } catch (error) {
-      toast.error("Error occurred while searching your email");
-    }
-  };
-
-  const [selectedEmail, setSelectedEmail] = useState(null);
-
-  const handleRadioChange = (suggestion) => {
-    setSelectedEmail(suggestion);
-    setEmail(suggestion); // Update the email input field with the selected suggestion
-  };
-
   const handleSendOtp = async () => {
     setIsSubmitting(true);
     try {
       const otpRequestData = {
-        email: selectedEmail,
+        email: email,
         role: role,
       };
       const response = await sendOtpEmail(otpRequestData).unwrap();
@@ -91,9 +53,10 @@ const RecoverPassword = () => {
       setIsOtpSent(true);
       setCurrentPage(2); // Move to the OTP verification page
     } catch (error) {
+      console.error(error);
       toast.error(
-        error?.response?.data?.message ||
-          error?.message ||
+        error?.data?.message ||
+          error?.data?.statusCode ||
           "Error sending OTP code"
       );
     } finally {
@@ -106,7 +69,7 @@ const RecoverPassword = () => {
     setIsSubmitting(true);
     try {
       const verifyData = {
-        email: selectedEmail,
+        email: email,
         role: role,
         otp: verifyCode,
       };
@@ -115,6 +78,7 @@ const RecoverPassword = () => {
       setIsOtpVerified(true);
       setCurrentPage(3); // Move to the password reset page
     } catch (error) {
+      console.log(error);
       toast.error(error?.data?.message || "Error verifying OTP");
     } finally {
       setIsSubmitting(false);
@@ -152,7 +116,7 @@ const RecoverPassword = () => {
     }
 
     const updateData = {
-      email: selectedEmail,
+      email: email,
       password: newPassword,
       role: role,
     };
@@ -173,6 +137,11 @@ const RecoverPassword = () => {
       setIsSubmitting(false);
     }
   };
+
+  function validateEmail(email) {
+    const pattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return pattern.test(email);
+  }
 
   return (
     <div className="bg-green-50 h-screen flex flex-col p-4 overflow-scroll scroller-hidden">
@@ -255,61 +224,14 @@ const RecoverPassword = () => {
                   required
                 />
                 <Button
-                  onClick={handleEmailSearch}
+                  disabled={!validateEmail(email) || isOtpLoading}
+                  onClick={handleSendOtp}
                   variant="contained"
                   color="primary"
                   className="mt-2"
                 >
-                  Search
+                  {isOtpLoading ? <CircularProgress size={24} /> : "Send OTP"}
                 </Button>
-              </div>
-              <div className="w-full mt-4">
-                {isLoading && <CircularProgress />}
-                {isError && (
-                  <Typography color="error">{searchEmailRes}</Typography>
-                )}
-                {suggestions.length > 0 ? (
-                  <div>
-                    <Typography variant="subtitle1">
-                      Suggested emails:
-                    </Typography>
-                    {suggestions.map((suggestion, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <input
-                          type="radio"
-                          name="email"
-                          id="email"
-                          value={suggestion}
-                          onChange={() => handleRadioChange(suggestion)}
-                          className="m-0"
-                        />
-                        <label className="m-0 font-KoHo" htmlFor="email">
-                          {suggestion}
-                        </label>
-                      </div>
-                    ))}
-                    {selectedEmail && (
-                      <Button
-                        onClick={handleSendOtp}
-                        variant="contained"
-                        color="primary"
-                        className="mt-4"
-                        disabled={isOtpLoading}
-                      >
-                        {isOtpLoading ? (
-                          <CircularProgress size={24} />
-                        ) : (
-                          "Send OTP"
-                        )}
-                      </Button>
-                    )}
-                  </div>
-                ) : (
-                  <Typography variant="p" className="text-center text-sm mb-4">
-                    Please write a valid email and press search to find your
-                    account
-                  </Typography>
-                )}
               </div>
             </form>
           </Box>
@@ -336,25 +258,22 @@ const RecoverPassword = () => {
                 onChange={(e) => setVerifyCode(e.target.value)}
                 required
               />
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                className="mt-4"
-                disabled={isVerifyLoading}
-              >
-                {isVerifyLoading ? (
-                  <CircularProgress size={24} />
-                ) : (
-                  "Verify OTP"
-                )}
-              </Button>
+              <Box sx={{ display: "flex", justifyContent: "center" }}>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  className="mt-4 mx-auto"
+                  disabled={isVerifyLoading}
+                >
+                  {isVerifyLoading ? (
+                    <CircularProgress size={24} />
+                  ) : (
+                    "Verify OTP"
+                  )}
+                </Button>
+              </Box>
             </form>
-            {isVerifyError && (
-              <Typography color="error" className="mt-2">
-                Error verifying OTP
-              </Typography>
-            )}
           </Box>
         </Box>
       )}

@@ -42,7 +42,7 @@ const CertificateCard = ({ data }) => {
           <Button
             className={`bg-[#22477F] text-white w-[189px] h-[26px] hover:text-black rounded-[7px] font-bold font-kodchasan md:text-[16px] lg:text-[20px] capitalize leading-[26px]`}
           >
-            {data?.saved_draft ? "Issue" : "Issue More"}
+            Issue
           </Button>
         </Link>
         <Link
@@ -51,7 +51,7 @@ const CertificateCard = ({ data }) => {
           <Button
             className={`bg-[#22477F] text-white w-[189px] h-[26px] hover:text-black  rounded-[7px] font-bold font-kodchasan md:text-[16px] lg:text-[20px] capitalize leading-[26px]`}
           >
-            {data?.saved_draft ? "Edit" : "Reissue existing"}
+            Edit
           </Button>
         </Link>
         <Link
@@ -60,7 +60,7 @@ const CertificateCard = ({ data }) => {
           <Button
             className={`bg-[#22477F] text-white w-[189px] h-[26px] hover:text-black rounded-[7px] font-bold font-kodchasan md:text-[16px] lg:text-[20px] capitalize leading-[26px]`}
           >
-            {data?.saved_draft ? "Report Error" : "Report issue"}
+           Report Error
           </Button>
         </Link>
       </div>

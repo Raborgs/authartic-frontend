@@ -96,5 +96,5 @@ export const {
   useFindEmailMutation,
   useSendOtpEmailMutation,
   useVerificationAccountMutation,
-  useUpdatePasswordMutation 
+  useUpdatePasswordMutation
 } = usersApiSlice;

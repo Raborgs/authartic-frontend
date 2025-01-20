@@ -2,7 +2,11 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ["localhost", "authartic-bucket.sfo3.digitaloceanspaces.com"],
+    domains: [
+      "localhost",
+      "authartic-bucket.sfo3.digitaloceanspaces.com",
+      "flagcdn.com",
+    ],
   },
 };
 
