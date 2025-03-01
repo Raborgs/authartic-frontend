@@ -1,6 +1,9 @@
 "use client";
 import * as React from "react";
-import { useActivatePlanMutation } from "@/slices/packageDataApiSlice";
+import {
+  useActivatePlanMutation,
+  useCheckEligibilityMutation,
+} from "@/slices/packageDataApiSlice";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardActions from "@mui/material/CardActions";
@@ -13,40 +16,63 @@ import { toast } from "react-toastify";
 import CircularProgress from "@mui/material/CircularProgress"; // Import the CircularProgress spinner
 import { useDispatch, useSelector } from "react-redux";
 import { setCredentials } from "@/slices/authSlice";
+import StripePaymentForm from "./StripePaymentForm";
 
+import { useCreateCheckoutSessionMutation } from "@/slices/stripeApiSlice";
 export default function PackageCard({ data }) {
   const router = useRouter();
   const dispatch = useDispatch();
-  const access_token = useSelector(
-    (state) => state.auth.userInfo?.access_token
-  );
+  const userInfo = useSelector((state) => state.auth.userInfo);
 
+  // const [
+  //   activateSubscriptionPlan,
+  //   { isLoading: isActivationLoading, error: isActivationError },
+  // ] = useActivatePlanMutation();
   const [
-    activateSubscriptionPlan,
-    { isLoading: isActivationLoading, error: isActivationError },
-  ] = useActivatePlanMutation();
+    checkEligibility,
+    { isLoading: isEligibilityLoading, error: eligibilityError },
+  ] = useCheckEligibilityMutation();
+  const [
+    createCheckoutSession,
+    { isLoading: isStripeLoading, error: stripeError },
+  ] = useCreateCheckoutSessionMutation();
+    const [isProcessing, setIsProcessing] = React.useState(false);
+  if (!data || !data.id) {
+    return <p>Loading package...</p>;
+  }
 
   const standardPlanPrice = data.id === 2 && data.price;
   const proPlanPrice = data.id === 3 && data.price;
 
   const submitHandler = async (id) => {
     try {
-      let res = await activateSubscriptionPlan(id).unwrap();
-      if (res) {
-        dispatch(setCredentials({ access_token, user: res }));
-        toast.success("Subscribed Plan Successfully");
-        router.push("/home");
+      if (!userInfo?.user?.email) {
+        toast.error("Email is missing.");
+        return;
       }
-    } catch (err) {
-      console.error(err);
-      if (err?.data) {
-        toast.error(err.data.message || "An unknown error occurred");
+            setIsProcessing(true); // ✅ Start Loader
+      const { data: eligibilityResult } = await checkEligibility(id);
+      console.log("eligibilityResult....", eligibilityResult);
+      if (!eligibilityResult?.success) {
+        toast.error(
+          eligibilityResult?.message || "You are not eligible to subscribe."
+        );
+        setIsProcessing(false);
+        return;
+      }
+
+      const { data: paymentResponse } = await createCheckoutSession(id);
+
+      if (paymentResponse?.checkoutUrl) {
+        window.location.href = paymentResponse.checkoutUrl;
       } else {
-        toast.error("An unexpected error occurred");
+        toast.error("Failed to initiate payment.");
       }
+    } catch (error) {
+      // console.error("Payment Error:", error);
+      toast.error("Subscription Failed. Please try again.");
     }
   };
-
   return (
     <div
       className={`w-[80%] sm:w-[100%] justify-self-center md:justify-self-auto md:max-w-[329px] relative lg:w-[329px]`}
@@ -108,28 +134,28 @@ export default function PackageCard({ data }) {
               <Button
                 onClick={() => submitHandler(data?.id)}
                 size="small"
-                className="text-[18px] font-medium bg-[#387AFA] text-white h-[34px] rounded-[20px] w-full font-poppins hover:bg-[#3879fac9]"
-                disabled={isActivationLoading} // Disable button while loading
+                className="text-[18px] font-medium bg-[#387AFA] text-white h-[34px] rounded-[20px] w-full hover:bg-[#3879fac9]"
+                disabled={isProcessing || isStripeLoading} 
               >
-                {isActivationLoading ? (
+                {isProcessing || isStripeLoading ? ( 
                   <CircularProgress
                     size={24}
                     sx={{ color: "white", marginRight: 1 }}
-                  /> // Show spinner when loading
+                  />
                 ) : (
                   <>
                     {data.id === 1
-                      ? "Free Plan"
-                      : data.id === 2
-                      ? `$${standardPlanPrice}`
-                      : data.id === 3
-                      ? `$${proPlanPrice}`
+                    ? "Free Plan"
+                    : data.id === 2
+                    ? `$${standardPlanPrice}`
+                    : data.id === 3
+                    ? `$${proPlanPrice}`
+                    : ""}
+                  <span className="font-poppins font-medium text-[10px] mx-1 leading-[12px] text-left">
+                    {data.id === 2 || data.id === 3
+                      ? "Billed Monthly, Cancel any time"
                       : ""}
-                    <span className="font-poppins font-medium text-[10px] mx-1 leading-[12px] text-left">
-                      {data.id === 2 || data.id === 3
-                        ? "Billed Monthly, Cancel any time"
-                        : ""}
-                    </span>
+                  </span>
                   </>
                 )}
               </Button>

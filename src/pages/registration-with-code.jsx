@@ -47,7 +47,7 @@ const CodeRegistration = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [description, setDescription] = useState("");
-  const [website, setWebsite] = useState("");
+  const [website, setWebsite] = useState(null);
   const [socialMediaLinks, setSocialMediaLinks] = useState([]);
   const [otherLinks, setOtherLinks] = useState([]);
   const [validation_code_id, setValidationCodeId] = useState(0);
@@ -131,13 +131,13 @@ const CodeRegistration = () => {
 
   // testing
   const isValidPassword = (password) => {
-    const minLength = 8; // Example minimum length
-    const maxLength = 20; // Example minimum length
+    const minLength = 8; // Minimum length
+    const maxLength = 20; // Maximum length
     const hasUpperCase = /[A-Z]/.test(password);
     const hasLowerCase = /[a-z]/.test(password);
     const hasNumbers = /\d/.test(password);
-    const hasSpecialChars = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-
+    const hasSpecialChars = /[\W_]/.test(password); // \W matches any non-word character, including all special characters
+  
     return (
       password.length >= minLength &&
       password.length <= maxLength &&
@@ -194,9 +194,8 @@ const CodeRegistration = () => {
 
       {
         condition: !isValidPassword(password),
-        message:
-          "Password must be at least 8 characters long and must be less then 20 characters and include upper/lowercase letters, numbers, and special characters.",
-      },
+        message:"Password must be 8-20 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character (e.g., @, #, +, %, etc.)."
+      }, 
       {
         condition: await checkIsEmailAlreadyTaken(email),
         message: "Email is already taken.",

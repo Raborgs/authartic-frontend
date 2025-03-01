@@ -11,6 +11,15 @@ export const subscriptionPlanApiSlice = apiSlice.injectEndpoints({
         body: data,
       }),
     }),
+    checkEligibility: builder.mutation({
+      query: (id) => ({
+        url: `${SUBSCRIPTION_PLAN_URL}/check-eligibility/${id}`,
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${getTokenFromLocalStorage()}`,
+        },
+      }),
+    }),
     activatePlan: builder.mutation({
       query: (id) => ({
         url: `${SUBSCRIPTION_PLAN_URL}/activate-plan/${id}`,
@@ -23,4 +32,4 @@ export const subscriptionPlanApiSlice = apiSlice.injectEndpoints({
   }),
 });
 
-export const { useGetsubscrptionPlanQuery, useActivatePlanMutation } = subscriptionPlanApiSlice;
+export const { useGetsubscrptionPlanQuery, useCheckEligibilityMutation , useActivatePlanMutation } = subscriptionPlanApiSlice;

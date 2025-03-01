@@ -4,9 +4,9 @@
 // dotenv.config();
 
 // Define base URL using the environment variable or fallback
-// export const BASE_URL = "http://localhost:8000/api/v1";
+export const BASE_URL = "http://localhost:8000/api/v1";
 // export const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000/api/v1";
-export const BASE_URL = "https://api.authartic.com/api/v1/";
+// export const BASE_URL = "https://api.authartic.com/api/v1/";
 // Define other API endpoints
 export const AUTH_URL = "/auth";
 export const USER_URL = "/user";
@@ -24,3 +24,6 @@ export const REPORT_PROBLEM_URL = "/report-problem";
 export const ADMIN_REPORT_PROBLEM_URL = "/admin/report-problem";
 export const CONTACT_US_URL = "/contact";
 export const RE_ISSUE_EXISTING_URL = "/certificate-info/certificate";
+
+// Stripe Payment URLs
+export const STRIPE_URL = "/stripe";

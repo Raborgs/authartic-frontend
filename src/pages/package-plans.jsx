@@ -102,7 +102,7 @@ const Index = () => {
             <DialogTitle>Email Verification Required</DialogTitle>
             <DialogContent>
               <Typography>
-                “Your email address <strong>{userInfo?.user?.email}</strong> is
+                Your email address <strong>{userInfo?.user?.email}</strong> is
                 not verified yet. Please check your spam folder or click the
                 button below to resend the verification link
               </Typography>
