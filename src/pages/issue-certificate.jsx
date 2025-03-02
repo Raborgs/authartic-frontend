@@ -156,6 +156,7 @@ function IssueMore() {
     lastIssuedDate = "Certificate has not been issued yet";
   }
 
+ 
   return (
     <>
       <Header
@@ -206,10 +207,11 @@ function IssueMore() {
               }`}
               onClick={() => setIssueState("issueMore")}
             >
-              {certificateSavedDraft === "true" ? "Issue" : "Issue More"}
+              {certificateSavedDraft === "true" ? "Issue" : "Issue"}
             </Button>
             <Button
               type="submit"
+              disabled={certificateSavedDraft}
               variant="contained"
               className={`rounded-[7px] font-kodchasan float-end py-0 ${
                 issueState === "reissueExisting"
@@ -218,7 +220,7 @@ function IssueMore() {
               }`}
               onClick={() => setIssueState("reissueExisting")}
             >
-              {certificateSavedDraft === "true" ? "Edit" : "Reissue existing"}
+              {certificateSavedDraft === "true" ? "Edit" : "Edit"}
             </Button>
             <Button
               type="button"
@@ -230,7 +232,7 @@ function IssueMore() {
             >
               {certificateSavedDraft === "true"
                 ? "Report error"
-                : "Report Problem"}
+                : "Report Error"}
             </Button>
           </Box>
         </Box>

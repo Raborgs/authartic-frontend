@@ -14,7 +14,7 @@ const Index = () => {
   const [certificateData, setCertificateData] = useState([]);
   const [params, setParams] = useState({
     page: 1,
-    limit: 10,
+    limit: 999,
     saved_draft: false,
   });
 
@@ -41,14 +41,14 @@ const Index = () => {
       setDraftText("Issued Certificates");
       setParams({
         page: 1,
-        limit: 10,
+        limit: 999,
         saved_draft: true,
       });
     } else {
       setDraftText("Drafts");
       setParams({
         page: 1,
-        limit: 10,
+        limit: 999,
         saved_draft: false,
       });
     }

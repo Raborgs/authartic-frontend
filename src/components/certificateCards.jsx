@@ -45,22 +45,30 @@ const CertificateCard = ({ data }) => {
             Issue
           </Button>
         </Link>
-        <Link
-          href={`/issue-certificate/?saved_draft=${data?.saved_draft}&id=${data?.id}&btn=reissueExisting`}
-        >
+        {data?.saved_draft === false ? (
+          <Link
+            href={`/issue-certificate/?saved_draft=${data?.saved_draft}&id=${data?.id}&btn=reissueExisting`}
+          >
+            <Button className="bg-[#22477F] text-white w-[189px] h-[26px] hover:text-black rounded-[7px] font-bold font-kodchasan md:text-[16px] lg:text-[20px] capitalize leading-[26px]">
+              Edit
+            </Button>
+          </Link>
+        ) : (
           <Button
-            className={`bg-[#22477F] text-white w-[189px] h-[26px] hover:text-black  rounded-[7px] font-bold font-kodchasan md:text-[16px] lg:text-[20px] capitalize leading-[26px]`}
+            className="bg-gray-400 text-white w-[189px] h-[26px] rounded-[7px] font-bold font-kodchasan md:text-[16px] lg:text-[20px] capitalize leading-[26px] cursor-not-allowed"
+            disabled
           >
             Edit
           </Button>
-        </Link>
+        )}
+
         <Link
           href={`/issue-certificate/?saved_draft=${data?.saved_draft}&id=${data?.id}&btn=reportIssue`}
         >
           <Button
             className={`bg-[#22477F] text-white w-[189px] h-[26px] hover:text-black rounded-[7px] font-bold font-kodchasan md:text-[16px] lg:text-[20px] capitalize leading-[26px]`}
           >
-           Report Error
+            Report Error
           </Button>
         </Link>
       </div>

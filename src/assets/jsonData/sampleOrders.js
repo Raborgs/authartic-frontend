@@ -39,7 +39,7 @@ const Asset = [
         numberOfCertficateIssue: "Number of certificates issued",
         btnOne: "Issue More",
         btnTwo: "Reissue existing",
-        btnThree: "Report issue"
+        btnThree: " issue"
     }
 ]
 export default Asset

@@ -17,13 +17,12 @@ import CircularProgress from "@mui/material/CircularProgress"; // Import the Cir
 import { useDispatch, useSelector } from "react-redux";
 import { setCredentials } from "@/slices/authSlice";
 import StripePaymentForm from "./StripePaymentForm";
-
 import { useCreateCheckoutSessionMutation } from "@/slices/stripeApiSlice";
+
 export default function PackageCard({ data }) {
   const router = useRouter();
   const dispatch = useDispatch();
   const userInfo = useSelector((state) => state.auth.userInfo);
-
   // const [
   //   activateSubscriptionPlan,
   //   { isLoading: isActivationLoading, error: isActivationError },
@@ -50,9 +49,8 @@ export default function PackageCard({ data }) {
         toast.error("Email is missing.");
         return;
       }
-            setIsProcessing(true); // ✅ Start Loader
+      setIsProcessing(true); 
       const { data: eligibilityResult } = await checkEligibility(id);
-      console.log("eligibilityResult....", eligibilityResult);
       if (!eligibilityResult?.success) {
         toast.error(
           eligibilityResult?.message || "You are not eligible to subscribe."
@@ -69,7 +67,6 @@ export default function PackageCard({ data }) {
         toast.error("Failed to initiate payment.");
       }
     } catch (error) {
-      // console.error("Payment Error:", error);
       toast.error("Subscription Failed. Please try again.");
     }
   };

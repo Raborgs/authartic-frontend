@@ -19,13 +19,14 @@ import { useResendVerificationEmailMutation } from "@/slices/userApiSlice";
 import WithAuth from "@/components/withAuth";
 import LogoutIcon from "@mui/icons-material/Logout";
 import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
+import { useGetProfileQuery } from "@/slices/userApiSlice";
 
 const Index = () => {
   const [openModal, setOpenModal] = useState(false);
   const { userInfo } = useSelector((state) => state?.auth);
 
   const router = useRouter();
-
+  const { data: logedInUserDetails } = useGetProfileQuery();
   const {
     data: subscriptionData,
     error: subscriptionError,
@@ -97,8 +98,8 @@ const Index = () => {
         )}
 
         {/* Full-screen overlay when email is not verified */}
-        {openModal && (
-          <Dialog open={openModal} onClose={() => setOpenModal(!false)}>
+        {logedInUserDetails?.is_email_verified === false && (
+          <Dialog open={!logedInUserDetails?.is_email_verified} onClose={() => setOpenModal(!false)}>
             <DialogTitle>Email Verification Required</DialogTitle>
             <DialogContent>
               <Typography>
@@ -115,12 +116,6 @@ const Index = () => {
               >
                 {resendLoading ? "Sending..." : "Send Again"}
               </Button>
-              {/* <Button
-                onClick={handleOpenGmail}
-                className="cursor-pointer font-kodchasan text-md md:text-lg xl:text-xl text-white hover:bg-[#22477F] font-normal py-1 px-5 md:px-9 bg-[#22477F]"
-              >
-                Open Gmail
-              </Button> */}
             </DialogActions>
           </Dialog>
         )}

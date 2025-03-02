@@ -134,7 +134,7 @@ const AdminDashboard = () => {
     },
     {
       id: 6,
-      title: "Report Problem",
+      title: "Report Error",
       count: isTotalReportsDataLoading
         ? "Loading..."
         : TotalReportsDataError
